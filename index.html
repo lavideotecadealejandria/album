@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -9,7 +9,7 @@
     <style>
         body { font-family: 'IM Fell English', serif; }
         .vintage-paper {
-            background-color: #f4e4bc;
+            background-color: #a89f91; 
             background-image: url("https://www.transparenttextures.com/patterns/aged-paper.png");
         }
         /* Efecto de pegatina al ser activada */
@@ -17,29 +17,32 @@
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .sticker-active {
-            filter: sepia(0) drop-shadow(5px 5px 10px rgba(0,0,0,0.4));
+            filter: sepia(0.2) drop-shadow(5px 5px 10px rgba(0,0,0,0.3));
             transform: rotate(-1.5deg) scale(1.02);
-            border: 1px solid #444;
+            border: 1px solid #555;
         }
         .sticker-slot:hover:not(.sticker-active) {
             background-color: #e2d1a6;
             transform: translateY(-2px);
         }
         
-        /* Estilos para el modal personalizado */
         .modal-overlay {
             background-color: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(2px);
         }
 
-        /* Ocultar barra de scroll para el menú horizontal */
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Clase para asegurar que el PNG se funda con el fondo si tiene bordes blancos mínimos */
+        .png-blend {
+            mix-blend-mode: multiply;
+        }
     </style>
 </head>
 <body class="vintage-paper min-h-screen p-4 md:p-8 flex flex-col">
 
-    <nav class="max-w-5xl mx-auto mb-8 flex items-center justify-between border-b-2 border-stone-800 w-full pb-4 overflow-x-auto hide-scrollbar">
+    <nav id="main-nav" class="hidden max-w-5xl mx-auto mb-8 flex items-center justify-between border-b-2 border-stone-800 w-full pb-4 overflow-x-auto hide-scrollbar">
         <div class="flex flex-col items-start gap-2 shrink-0 pr-8">
             <h1 class="text-2xl md:text-3xl font-bold uppercase tracking-tighter text-stone-900 whitespace-normal text-left max-w-[200px] md:max-w-[250px] leading-tight">La Videoteca de Alejandría</h1>
             <div class="text-stone-700 font-bold bg-stone-300/50 px-3 py-1 rounded text-sm md:text-base whitespace-nowrap">
@@ -50,10 +53,7 @@
             <a href="#" onclick="showView('portada')" id="nav-portada" class="hover:underline font-bold underline transition-all">Portada</a>
             <a href="#" onclick="showView('album')" id="nav-album" class="hover:underline transition-all">Mi Álbum</a>
             <a href="#" onclick="showView('misiones')" id="nav-misiones" class="hover:underline transition-all">Misiones</a>
-            <a href="#" onclick="showView('recompensa')" id="nav-recompensa" class="text-stone-400 cursor-not-allowed pointer-events-none transition-all">Recompensa 🔒</a>
-            <button id="open-reset-modal" class="text-xs font-sans font-bold bg-stone-800 text-stone-100 px-4 py-2 rounded shadow hover:bg-stone-700 transition-colors ml-2">
-                Reiniciar
-            </button>
+            <a href="#" onclick="showView('recompensa')" id="nav-recompensa" class="bg-stone-300/50 text-stone-600 border border-stone-400 px-3 py-1 rounded font-bold cursor-not-allowed pointer-events-none transition-all">Recompensa 🔒</a>
         </div>
     </nav>
 
@@ -71,7 +71,7 @@
                 </h2>
                 
                 <div class="w-48 h-48 mx-auto border-4 border-stone-800 rounded-full overflow-hidden mb-8 shadow-inner bg-stone-300">
-                    <img src="https://picsum.photos/id/1015/400/400" class="w-full h-full object-cover sepia mix-blend-multiply" alt="Símbolo de la portada">
+                    <img src="https://picsum.photos/id/1015/400/400" class="w-full h-full object-cover sepia mix-blend-multiply" alt="">
                 </div>
                 
                 <p class="text-xl md:text-2xl text-stone-800 italic mb-10 font-serif">"Quien busca la verdad, encuentra su destino."</p>
@@ -84,16 +84,27 @@
 
         <!-- Vista 1: Álbum -->
         <div id="view-album" class="view-section hidden">
-            <!-- Título dinámico de la página actual -->
-            <div class="text-center mb-8 mt-4">
-                <h3 id="album-page-title" class="text-3xl font-bold uppercase tracking-tighter text-stone-900 inline-block px-8"></h3>
+            <div id="album-content-wrapper" class="border-[4px] border-double border-stone-800 p-6 md:p-10 shadow-lg bg-[#f9ecce] mt-4 relative mb-8 overflow-hidden">
+                
+                <!-- CAPA DE FONDO: Ilustración PNG Transparente -->
+                <div id="album-vector-bg" class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20 p-12 transition-all duration-500">
+                    <!-- El PNG se inyecta aquí -->
+                </div>
+
+                <!-- CONTENIDO FRONTAL -->
+                <div class="relative z-10">
+                    <div class="text-left mb-6 pl-2">
+                        <h3 id="album-page-title" class="text-2xl md:text-4xl font-bold uppercase tracking-tighter text-stone-900 inline-block"></h3>
+                    </div>
+
+                    <!-- Cuadrícula Ajustada: 4 columnas en MD -->
+                    <div id="album-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 items-start max-w-4xl mx-auto">
+                        <!-- Espaciador y Láminas dinámicas -->
+                    </div>
+                </div>
             </div>
             
-            <div id="album-grid" class="grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-10">
-                <!-- Las láminas se generan aquí -->
-            </div>
-            
-            <div id="pagination-controls" class="mt-8 flex justify-center space-x-2 md:space-x-4">
+            <div id="pagination-controls" class="flex justify-center space-x-2 md:space-x-4 pb-8">
                 <!-- Paginación dinámica -->
             </div>
         </div>
@@ -116,32 +127,16 @@
                 <div class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 pointer-events-none"></div>
                 <p class="text-3xl mb-4 font-bold text-yellow-900">¡Felicidades, Gran Explorador!</p>
                 <p class="text-xl text-yellow-800 mb-8">Has completado con éxito la bitácora de viaje. Tu dedicación y curiosidad te han llevado a descubrir todos los secretos de esta tierra.</p>
-                <img src="https://picsum.photos/id/1059/600/400" class="mx-auto border-4 border-stone-800 rounded shadow-xl transform rotate-1 hover:rotate-0 transition-transform duration-300" alt="Tesoro Legendario">
+                <img src="https://picsum.photos/id/1059/600/400" class="mx-auto border-4 border-stone-800 rounded shadow-xl transform rotate-1 hover:rotate-0 transition-transform duration-300" alt="">
                 <p class="mt-6 text-sm font-sans uppercase tracking-widest text-yellow-900 font-bold">Certificado de Maestro Explorador</p>
             </div>
         </div>
 
     </main>
 
-    <!-- Modal de Confirmación -->
-    <div id="confirm-modal" class="fixed inset-0 modal-overlay hidden flex items-center justify-center z-50 p-4">
-        <div class="bg-[#f4e4bc] border-4 border-stone-800 p-6 md:p-8 max-w-sm w-full rounded-sm shadow-2xl transform transition-all text-center" style="background-image: url('https://www.transparenttextures.com/patterns/aged-paper.png');">
-            <h2 class="text-2xl font-bold mb-4 text-stone-900">¿Borrar registros?</h2>
-            <p class="text-stone-700 mb-8 italic">¿Estás seguro de que deseas vaciar tu bitácora y empezar una nueva aventura?</p>
-            <div class="flex justify-center space-x-4 font-sans">
-                <button id="cancel-reset" class="px-4 py-2 bg-stone-300 text-stone-800 font-bold rounded hover:bg-stone-400 transition-colors">
-                    Cancelar
-                </button>
-                <button id="confirm-reset" class="px-4 py-2 bg-red-800 text-white font-bold rounded hover:bg-red-700 transition-colors shadow-lg">
-                    Sí, vaciar
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- Modal de Celebración -->
     <div id="celebration-modal" class="fixed inset-0 modal-overlay hidden flex items-center justify-center z-50 p-4">
-        <div class="bg-[#f4e4bc] border-4 border-yellow-600 p-8 max-w-md w-full rounded shadow-2xl transform transition-all text-center" style="background-image: url('https://www.transparenttextures.com/patterns/aged-paper.png');">
+        <div class="bg-[#f4e4bc] border-4 border-yellow-600 p-8 max-md w-full rounded shadow-2xl transform transition-all text-center" style="background-image: url('https://www.transparenttextures.com/patterns/aged-paper.png');">
             <div class="text-6xl mb-4">🏆</div>
             <h2 class="text-3xl font-bold mb-4 text-yellow-800">¡Bitácora Completada!</h2>
             <p class="text-stone-800 mb-8 text-lg">Has reunido todas las láminas. La sección de recompensa ha sido desbloqueada.</p>
@@ -176,14 +171,13 @@
     </div>
 
     <script>
-        // Configuración de las láminas del álbum
         const laminasData = [
             { id: 1, nombre: "El Águila y el Nopal", img: "https://picsum.photos/id/1018/300/400", mision: "Explora las ruinas al sur del campamento base y descifra la inscripción de la entrada.", codigo: "AGUILA" },
             { id: 2, nombre: "El Disco de Oro", img: "https://picsum.photos/id/1025/300/400", mision: "Intercambia suministros con el mercader de la Aldea de Arena.", codigo: "ORO" },
             { id: 3, nombre: "El Rostro de Mictlantecuhtli", img: "https://picsum.photos/id/1033/300/400", mision: "Encuentra los tres fragmentos ocultos en el Bosque de los Susurros.", codigo: "ROSTRO" },
-            { id: 4, nombre: "El Glifo del Tlatoani", img: "https://picsum.photos/id/1036/300/400", mision: "Alcanza la cima del risco antes del atardecer para capturar esta vista.", codigo: "CIMA" },
-            { id: 5, nombre: "El Códice de las Aguas", img: "https://picsum.photos/id/1043/300/400", mision: "Resuelve el puzzle de los espejos en las Cuevas de Cristal.", codigo: "AGUA" },
-            { id: 6, nombre: "Otro Semana Azteca", img: "https://picsum.photos/id/1050/300/400", mision: "Desentierra la reliquia en el oasis durante el solsticio de verano.", codigo: "SOL" },
+            { id: 4, nombre: "El Glifo del Tlatoani", img: "https://picsum.photos/id/1036/300/400", mision: "Alcanza la cima del risco antes del atardecer para capturar esta vista.", codigo: "GLIFO" },
+            { id: 5, nombre: "El Códice de las Aguas", img: "https://picsum.photos/id/1043/300/400", mision: "Resuelve el puzzle de los espejos en las Cuevas de Cristal.", codigo: "CODICE" },
+            { id: 6, nombre: "Otro Semana Azteca", img: "https://picsum.photos/id/1050/300/400", mision: "Desentierra la reliquia en el oasis durante el solsticio de verano.", codigo: "AZTECA" },
             { id: 7, nombre: "Guerrero Jaguar", img: "https://picsum.photos/id/1053/300/400", mision: "Demuestra tu valor en el campo de entrenamiento al amanecer.", codigo: "JAGUAR" },
             { id: 8, nombre: "Calendario de Piedra", img: "https://picsum.photos/id/1056/300/400", mision: "Alinea las sombras al mediodía en la pirámide circular.", codigo: "SOMBRA" },
             { id: 9, nombre: "Templo Mayor", img: "https://picsum.photos/id/1064/300/400", mision: "Escala los 100 escalones sagrados antes de que suene el caracol.", codigo: "CARACOL" },
@@ -192,72 +186,67 @@
             { id: 12, nombre: "Máscara de Turquesa", img: "https://picsum.photos/id/1080/300/400", mision: "Recupera la ofrenda de los guardianes del cenote profundo.", codigo: "CENOTE" }
         ];
 
-        // Títulos de cada página (cada 6 láminas)
-        const pageTitles = [
-            "Los Vestigios del Valle",
-            "Los Misterios de la Selva"
+        // --- CONFIGURACIÓN DE IMÁGENES DE FONDO (PNG TRANSPARENTE) ---
+        const pageBackgroundImages = {
+            1: "https://www.transparentpng.com/download/compass/compass-transparent-images-12.png", // Brújula antigua
+            2: "https://www.transparentpng.com/download/scroll/ancient-scroll-transparent-background-7.png" // Pergamino viejo
+        };
+
+        const pageData = [
+            { titulo: "El Imperio del Sol" },
+            { titulo: "Los Misterios de la Selva" }
         ];
 
-        // Estado en memoria con soporte de localStorage
         let albumState = JSON.parse(localStorage.getItem('videotecaAlbumState')) || {};
         let currentPage = 1;
         const itemsPerPage = 6;
         let currentUnlockId = null;
 
         const grid = document.getElementById('album-grid');
-        const modal = document.getElementById('confirm-modal');
+        const vectorBg = document.getElementById('album-vector-bg');
         const celebrationModal = document.getElementById('celebration-modal');
         const codeModal = document.getElementById('code-modal');
         const codeInput = document.getElementById('secret-code-input');
         const codeError = document.getElementById('code-error-msg');
 
-        // Función para cambiar de vista
         function showView(viewId) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
             document.getElementById('view-' + viewId).classList.remove('hidden');
-
-            ['portada', 'album', 'misiones', 'recompensa'].forEach(id => {
+            const mainNav = document.getElementById('main-nav');
+            if (viewId === 'portada') {
+                mainNav.classList.add('hidden');
+            } else {
+                mainNav.classList.remove('hidden');
+            }
+            ['portada', 'album', 'misiones'].forEach(id => {
                 const nav = document.getElementById('nav-' + id);
-                if (id === viewId) {
-                    nav.classList.add('underline', 'font-bold');
-                } else {
-                    nav.classList.remove('underline');
-                    if(id !== 'recompensa') nav.classList.remove('font-bold');
+                if (nav) {
+                    if (id === viewId) nav.classList.add('underline', 'font-bold');
+                    else nav.classList.remove('underline', 'font-bold');
                 }
             });
         }
 
-        // Función para actualizar el progreso del contador y la vista de recompensa
         function updateProgress() {
             const count = Object.keys(albumState).length;
             const total = laminasData.length;
             document.getElementById('sticker-counter').innerText = count;
             document.getElementById('total-laminas').innerText = total;
-
             const navRecompensa = document.getElementById('nav-recompensa');
             if (count === total) {
-                navRecompensa.classList.remove('text-stone-400', 'cursor-not-allowed', 'pointer-events-none');
-                navRecompensa.classList.add('text-yellow-700', 'font-bold', 'animate-pulse');
+                navRecompensa.className = 'bg-yellow-500 text-stone-900 border-2 border-yellow-600 px-3 py-1 rounded font-bold hover:bg-yellow-400 animate-pulse transition-all shadow-md';
                 navRecompensa.innerText = '¡Recompensa! 🌟';
             } else {
-                navRecompensa.classList.add('text-stone-400', 'cursor-not-allowed', 'pointer-events-none');
-                navRecompensa.classList.remove('text-yellow-700', 'font-bold', 'animate-pulse');
+                navRecompensa.className = 'bg-stone-300/50 text-stone-600 border border-stone-400 px-3 py-1 rounded font-bold cursor-not-allowed pointer-events-none transition-all';
                 navRecompensa.innerText = 'Recompensa 🔒';
-                
-                // Si está en recompensa y se pierden láminas (por reset), forzar vista al álbum
-                if (!document.getElementById('view-recompensa').classList.contains('hidden')) {
-                    showView('album');
-                }
             }
         }
 
-        // Función para renderizar la paginación
         function renderPagination() {
             const totalPages = Math.ceil(laminasData.length / itemsPerPage);
             const paginationContainer = document.getElementById('pagination-controls');
             if(!paginationContainer) return;
             paginationContainer.innerHTML = '';
-
             for (let i = 1; i <= totalPages; i++) {
                 const btn = document.createElement('button');
                 btn.innerText = `Página ${i}`;
@@ -270,38 +259,27 @@
             }
         }
 
-        // Función para renderizar las misiones dinámicamente
         function renderMisiones() {
             const misionesList = document.getElementById('misiones-list');
             if (!misionesList) return;
             misionesList.innerHTML = '';
-            
             const totalPages = Math.ceil(laminasData.length / itemsPerPage);
-            
             for (let p = 0; p < totalPages; p++) {
-                // Contenedor de la sección de la página
                 const pageSection = document.createElement('div');
                 pageSection.className = p > 0 ? 'mt-12' : '';
-                
-                // Divisor con el título de la página
                 const divider = document.createElement('div');
                 divider.className = 'mb-6';
-                divider.innerHTML = `<h3 class="text-2xl font-bold uppercase tracking-tighter text-stone-900">${pageTitles[p]}</h3>`;
+                divider.innerHTML = `<h3 class="text-2xl font-bold uppercase tracking-tighter text-stone-900">${pageData[p].titulo}</h3>`;
                 pageSection.appendChild(divider);
-
-                // Contenedor para las tareas
                 const tasksContainer = document.createElement('div');
                 tasksContainer.className = 'space-y-4';
-
-                // Obtener solo las misiones de esta página
                 const startIndex = p * itemsPerPage;
                 const endIndex = startIndex + itemsPerPage;
                 const pageLaminas = laminasData.slice(startIndex, endIndex);
-
                 pageLaminas.forEach(lamina => {
                     const isOwned = albumState[lamina.id];
                     const div = document.createElement('div');
-                    div.className = `bg-stone-200/50 border border-stone-400 p-4 rounded flex items-center gap-4 transition-all ${isOwned ? 'opacity-60 grayscale' : ''}`;
+                    div.className = `bg-[#f9ecce] border border-stone-400 p-4 rounded flex items-center gap-4 transition-all shadow-sm ${isOwned ? 'opacity-60 grayscale' : ''}`;
                     div.innerHTML = `
                         <div class="text-3xl font-bold ${isOwned ? 'text-green-700' : 'text-stone-400'}">
                             ${isOwned ? '✓' : lamina.id}
@@ -313,130 +291,101 @@
                     `;
                     tasksContainer.appendChild(div);
                 });
-                
                 pageSection.appendChild(tasksContainer);
                 misionesList.appendChild(pageSection);
             }
         }
 
-        // Función para renderizar el estado actual del álbum
         function renderAlbum() {
             grid.innerHTML = '';
-            
             const pageIndex = currentPage - 1;
             
-            // Actualizar el título de la página en el álbum
+            // Título de la página
             const pageTitleEl = document.getElementById('album-page-title');
-            if (pageTitleEl && pageTitles[pageIndex]) {
-                pageTitleEl.innerText = pageTitles[pageIndex];
+            if (pageData[pageIndex] && pageTitleEl) {
+                pageTitleEl.innerText = pageData[pageIndex].titulo;
             }
 
+            // Actualizar Imagen PNG de fondo
+            if (vectorBg) {
+                const imgUrl = pageBackgroundImages[currentPage];
+                if (imgUrl) {
+                    vectorBg.innerHTML = `<img src="${imgUrl}" class="w-full h-full object-contain png-blend" alt="">`;
+                } else {
+                    vectorBg.innerHTML = '';
+                }
+            }
+
+            // 1. Insertar un espaciador invisible en la esquina superior izquierda (MD: 2 columnas)
+            const spacer = document.createElement('div');
+            spacer.className = "hidden md:block md:col-span-2 h-full";
+            grid.appendChild(spacer);
+
+            // 2. Insertar Láminas (6 por página)
             const startIndex = pageIndex * itemsPerPage;
             const endIndex = startIndex + itemsPerPage;
             const currentLaminas = laminasData.slice(startIndex, endIndex);
 
-            currentLaminas.forEach(lamina => {
+            currentLaminas.forEach((lamina) => {
                 const isOwned = albumState[lamina.id];
                 const card = document.createElement('div');
-                
-                // Estilos base para cada slot
-                card.className = `sticker-slot cursor-pointer border-2 border-dashed border-stone-400 bg-stone-200/40 aspect-[3/4] flex flex-col items-center justify-center relative overflow-hidden group shadow-inner rounded-sm`;
+                card.className = `sticker-slot cursor-pointer border-2 border-dashed border-stone-400 bg-stone-200/40 aspect-[3/4] flex flex-col items-center justify-center relative overflow-hidden group shadow-inner rounded-sm w-full bg-[#f9ecce]/80 backdrop-blur-[1px] z-20`;
                 
                 if (isOwned) {
-                    // Estilos cuando la lámina ya ha sido "pegada"
                     card.classList.remove('border-dashed', 'bg-stone-200/40', 'cursor-pointer');
                     card.classList.add('border-solid', 'sticker-active');
                     card.innerHTML = `
-                        <img src="${lamina.img}" class="w-full h-full object-cover" alt="${lamina.nombre}">
-                        <div class="absolute bottom-0 bg-stone-900/85 text-white w-full text-center py-2 text-xs font-sans uppercase tracking-widest">
+                        <img src="${lamina.img}" class="w-full h-full object-cover" alt="">
+                        <div class="absolute bottom-0 bg-stone-900/85 text-white w-full text-center py-1 text-[9px] font-sans uppercase tracking-widest">
                             ${lamina.nombre}
                         </div>
                     `;
                 } else {
-                    // Estilos para espacios vacíos
                     card.innerHTML = `
-                        <span class="text-5xl font-bold text-stone-400 opacity-20">${lamina.id}</span>
-                        <div class="absolute inset-0 bg-stone-800/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <span class="bg-stone-800 text-white px-3 py-1 text-xs font-bold rounded font-sans uppercase tracking-wider">Ingresar Código</span>
+                        <span class="text-3xl font-bold text-stone-400 opacity-20">${lamina.id}</span>
+                        <div class="absolute inset-0 bg-stone-800/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <span class="bg-stone-800 text-white px-2 py-1 text-[10px] font-bold rounded font-sans uppercase">Código</span>
                         </div>
                     `;
                     card.onclick = () => openCodeModal(lamina.id);
                 }
                 grid.appendChild(card);
             });
+
             renderPagination();
             renderMisiones();
-            updateProgress(); // Actualizamos el progreso visual
+            updateProgress();
         }
 
-        // Guarda la lámina en el estado
         function toggleLamina(id) {
             const wasComplete = Object.keys(albumState).length === laminasData.length;
-            
             albumState[id] = true;
-            localStorage.setItem('videotecaAlbumState', JSON.stringify(albumState)); // Guardar en localStorage
+            localStorage.setItem('videotecaAlbumState', JSON.stringify(albumState));
             renderAlbum();
-            
             const isComplete = Object.keys(albumState).length === laminasData.length;
-            
-            // Si acabamos de completar el álbum, mostramos celebración
-            if (!wasComplete && isComplete) {
-                celebrationModal.classList.remove('hidden');
-            }
+            if (!wasComplete && isComplete) celebrationModal.classList.remove('hidden');
         }
 
-        // --- Lógica de Vistas y Modales ---
         document.getElementById('go-to-recompensa').onclick = () => {
             celebrationModal.classList.add('hidden');
             showView('recompensa');
         };
+        document.getElementById('close-celebration').onclick = () => celebrationModal.classList.add('hidden');
 
-        document.getElementById('close-celebration').onclick = () => {
-            celebrationModal.classList.add('hidden');
-        };
-
-        document.getElementById('open-reset-modal').onclick = () => {
-            modal.classList.remove('hidden');
-        };
-
-        document.getElementById('cancel-reset').onclick = () => {
-            modal.classList.add('hidden');
-        };
-
-        document.getElementById('confirm-reset').onclick = () => {
-            albumState = {}; // Resetea el estado
-            localStorage.removeItem('videotecaAlbumState'); // Borrar de localStorage
-            renderAlbum();
-            modal.classList.add('hidden');
-        };
-
-        // --- Lógica del Modal de Códigos ---
         function openCodeModal(id) {
             currentUnlockId = id;
             codeInput.value = '';
             codeError.classList.add('hidden');
             codeModal.classList.remove('hidden');
-            // Timeout para asegurar que el modal esté visible antes de enfocar
             setTimeout(() => codeInput.focus(), 100);
         }
-
-        document.getElementById('close-code-modal').onclick = () => {
-            codeModal.classList.add('hidden');
-        };
-
+        document.getElementById('close-code-modal').onclick = () => codeModal.classList.add('hidden');
         document.getElementById('verify-code-btn').onclick = verifyCode;
-
-        // Permitir usar "Enter" en el input
-        codeInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                verifyCode();
-            }
-        });
+        codeInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') verifyCode(); });
 
         function verifyCode() {
             const lamina = laminasData.find(l => l.id === currentUnlockId);
             const userCode = codeInput.value.trim().toUpperCase();
-            
             if (userCode === lamina.codigo.toUpperCase()) {
                 codeModal.classList.add('hidden');
                 toggleLamina(currentUnlockId);
@@ -447,7 +396,6 @@
             }
         }
 
-        // Renderizado inicial
         renderAlbum();
     </script>
 </body>
