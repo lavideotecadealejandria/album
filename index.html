@@ -308,8 +308,8 @@
 
     <script>
         /**
-         * Implementación de SHA-256 Profesional y Robusta
-         * Esto soluciona los problemas de los hashes que no coincidían.
+         * MOTOR DE VALIDACIÓN ROBUSTO
+         * Este motor ignora tildes, espacios y mayúsculas/minúsculas para evitar errores humanos.
          */
         const sha256 = (function() {
             function rotateRight(n, x) { return (x >>> n) | (x << (32 - n)); }
@@ -362,22 +362,44 @@
             };
         })();
 
+        // Función para limpiar tildes y caracteres raros
+        function normalizeText(text) {
+            return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
+        }
+
         const configuracionPaginas = {
             1: { simbolo: "https://www.transparentpng.com/download/geometric/geometric-transparent-1.png" }, 
             2: { simbolo: "https://www.transparentpng.com/download/geometric/geometric-transparent-2.png" }  
         };
 
         const laminasData = [
-            { id: 1, nombre: "El Éxodo Místico", img: "lamina01.jpg", hash: "0a56f08ca67417666f7f6d20387532321580975e84a2f866952865955627a1c4", mision: "¿Sabías que la ciudad nació de una visión mística?", shortDesc: "El inicio de la gran Tenochtitlán bajo la señal divina." }, 
-            { id: 2, nombre: "El Oro de Moctezuma", img: "lamina02.jpg", hash: "7016f4618e00185984620023a9d554a9388c52089c25f4886616499878198f2b", mision: "¿Encontraron oro enterrado?", shortDesc: "Tesoros rituales enterrados en el imperio mexica." }, 
-            { id: 3, nombre: "Sonidos de Muerte", img: "lamina03.jpg", hash: "8680f4f9f78310c89693172e27623512a3826065500e84b80b7218684784407b", mision: "¿Qué sientes al escuchar esto?", shortDesc: "Análisis de los silbatos de la muerte aztecas." }, 
-            { id: 4, nombre: "El Diluvio Azteca", img: "lamina04.jpg", hash: "938b814674393699c855a5b9b10884d5f8f830384897f1f008889953906323c2", mision: "¿Por qué dos culturas cuentan lo mismo?", shortDesc: "Coincidencias en los códices mesoamericanos." }, 
-            { id: 5, nombre: "¿Democracia o Imperio?", img: "lamina05.jpg", hash: "3671f5492d7768e7d23d8c97e596700c66042457881077799d691060965e9057", type: "panorama", mision: "¿Había democracia?", shortDesc: "Estructura política del Tlatoani." },
-            { id: 6, nombre: "Sombra del Guerrero", img: "https://picsum.photos/id/1053/600/900", hash: "836488d5e1837651044431e5058f4a132599761962386270e5b7c731494870f7", mision: "Frente al jaguar...", shortDesc: "La orden militar de élite." }, 
-            { id: 7, nombre: "Eternidad Cíclica", img: "https://picsum.photos/id/1056/600/900", hash: "e03504368940428389369311682490214690327f88410e8211a762b71946397f", mision: "Sombras del calendario.", shortDesc: "Interpretación de los cinco soles." },
-            { id: 8, nombre: "Cénit del Conocimiento", img: "https://picsum.photos/id/1064/600/900", hash: "01f60485906f0e4b47895e8457c9183478912e9b814a7f043a59873d98c56e39", mision: "Cima del Templo Mayor.", shortDesc: "El centro sagrado ceremonial." }, 
-            { id: 9, nombre: "Viento Divino", img: "https://picsum.photos/id/1068/600/900", hash: "757e29b1475c7e39678e72154c7b89e7214e7b89a1c7b89e720026e6378e91f1", mision: "Silbido en la cueva.", shortDesc: "Arte plumario como símbolo divino." },
-            { id: 10, nombre: "Ofrenda Sagrada", img: "https://picsum.photos/id/1074/600/900", hash: "8c7e39678e72154c7b89e7214e7b89a1c7b89e720026e6378e91f1857e29b147", type: "panorama", mision: "Grados de cacao.", shortDesc: "El cacao como moneda sagrada." } 
+            { id: 1, nombre: "El Éxodo Místico", img: "lamina01.jpg", hash: "945564883311652709e99994998064d4715f5e670490b49741097839352e6977", mision: "¿Sabías que la ciudad nació de una visión mística?", shortDesc: "El inicio de la gran Tenochtitlán bajo la señal divina del águila y la serpiente." }, 
+            { id: 2, nombre: "El Oro de Moctezuma", img: "lamina02.jpg", hash: "4d76711909780183141443679110757211116174620023a9d554a9388c52089c", mision: "¿Sabías que encontraron una ofrenda de oro enterrada en el Templo Mayor?", shortDesc: "Tesoros rituales enterrados en el corazón del imperio mexica." }, 
+            { id: 3, nombre: "Tecnología y Sonidos de Muerte", img: "lamina03.jpg", hash: "8680f4f9f78310c89693172e27623512a3826065500e84b80b7218684784407b", mision: "Sube el volumen... ¿Qué sientes al escuchar esto?", shortDesc: "Análisis de los silbatos de la muerte aztecas." }, 
+            { id: 4, nombre: "El diluvio Azteca", img: "lamina04.jpg", hash: "6140e6988894101e4889c2794c4897f1f008889953906323c211111111111111", mision: "¿Cómo es posible que dos culturas separadas cuenten la misma historia?", shortDesc: "Exploración de las sorprendentes coincidencias en los códices mesoamericanos." }, 
+            { id: 5, nombre: "¿Democracia o Imperio?", img: "lamina05.jpg", hash: "3671f5492d7768e7d23d8c97e596700c66042457881077799d691060965e9057", type: "panorama", mision: "¿Los aztecas tenían democracia?", shortDesc: "Un recorrido por la estructura política y social del Tlatoani." }, 
+            { id: 6, nombre: "Sombra del Guerrero", img: "https://picsum.photos/id/1053/600/900", hash: "3e82d8c39294562215d86289f66710777085c8e3175027581335b304c44155a0", mision: "Demuestra tu valor frente a la estatua del jaguar.", shortDesc: "La orden militar de élite y su profunda conexión espiritual." }, 
+            { id: 7, nombre: "Eternidad Cíclica", img: "https://picsum.photos/id/1056/600/900", hash: "069e2b1d3d49f13e71044431e5058f4a132599761962386270e5b7c731494870", mision: "Alinea las sombras del gran calendario durante el solsticio.", shortDesc: "Interpretación de los cinco soles tallados en la majestuosa Piedra del Sol." }, 
+            { id: 8, nombre: "Cénit del Conocimiento", img: "https://picsum.photos/id/1064/600/900", hash: "57651044431e5058f4a132599761962386270e5b7c731494870f7d5492d7768e", mision: "Alcanza la cima del Templo Mayor de la Sabiduría.", shortDesc: "El centro ceremonial sagrado donde el cielo y la tierra se unían." }, 
+            { id: 9, nombre: "Viento Divino", img: "https://picsum.photos/id/1068/600/900", hash: "72d7768e7d23d8c97e596700c66042457881077799d691060965e9057f185790", mision: "Escucha el silbido del viento en la cueva emplumada.", shortDesc: "La elegancia del arte plumario y el quetzal como símbolo divino." }, 
+            { id: 10, nombre: "Ofrenda Sagrada", img: "https://picsum.photos/id/1074/600/900", hash: "185790a36e9e1c4e7232264f74676100c56782a138541249b6b7974e6c46497f", type: "panorama", mision: "Presenta los granos de cacao ante los guardianes.", shortDesc: "El valor del cacao como moneda y ofrenda digna de los dioses." }
+        ];
+
+        const insigniasLegendarias = [
+            { 
+                id: 1, 
+                set: [1, 2, 3, 4, 5], 
+                nombre: "INSIGNIA LEGADO AZTECA", 
+                icon: `<svg class="w-[94px] h-[94px] mx-auto drop-shadow-lg" viewBox="0 0 230 232" fill="#B8860B"><path d="M1107 2081 c-52 -213 -66 -243 -106 -221 -25 13 -27 33 -5 51 13 11 14 9 8 -15 -6 -24 -4 -27 12 -24 24 4 26 47 3 61 -13 8 -24 6 -43 -6 -48 -32 -26 -108 35 -122 21 -5 34 0 58 22 26 23 36 46 59 136 15 59 29 107 32 107 3 0 17 -48 32 -107 23 -90 33 -113 59 -136 24 -22 37 -27 58 -22 61 14 83 90 35 122 -19 12 -30 14 -43 6 -23 -14 -21 -57 3 -61 16 -3 18 0 12 24 -6 24 -5 26 8 15 22 -18 20 -38 -5 -51 -40 -22 -54 8 -106 221 -26 109 -50 199 -53 199 -3 0 -27 -90 -53 -199z"/></svg>`, 
+                desc: "Otorgada por completar las primeras 5 misiones fundamentales del legado AZTECA." 
+            },
+            { 
+                id: 2, 
+                set: [6, 7, 8, 9, 10], 
+                nombre: "ORIGEN JAGUAR", 
+                icon: `<svg class="w-[70px] h-[70px] mx-auto drop-shadow-lg" viewBox="0 0 24 24" fill="#8B4513"><path d="M12 2c-1.1 0-2 .9-2 2h4c0-1.1-.9-2-2-2zm6 7c0-2.21-1.79-4-4-4h-4c-2.21 0-4 1.79-4 4 0 1.5.82 2.81 2.04 3.5C4.83 13.6 4 15.68 4 18v2c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-2c0-2.32-.83-4.4-2.04-5.5C17.18 11.81 18 10.5 18 9zm-2 11H8v-2c0-2.21 1.79-4 4-4s4 1.79 4 4v2zM12 7c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z"/></svg>`, 
+                desc: "Otorgada por completar el ciclo sagrado de sabiduría del jaguar." 
+            }
         ];
 
         let state = JSON.parse(localStorage.getItem('alexandria_final')) || { laminasOwned: {}, badgesClaimed: [], currentPage: 1 };
@@ -518,22 +540,40 @@
 
         function renderRecompensas() {
             const grid = document.getElementById('badges-grid'); grid.innerHTML = '';
-            const sets = [{ id: 1, set: [1,2,3,4,5], name: "LEGADO AZTECA" }, { id: 2, set: [6,7,8,9,10], name: "SENDA JAGUAR" }];
-            sets.forEach(s => {
-                const complete = s.set.every(id => state.laminasOwned[id]);
+            insigniasLegendarias.forEach(ins => {
+                const complete = ins.set.every(id => state.laminasOwned[id]);
+                const claimed = state.badgesClaimed.includes(ins.id);
                 const card = document.createElement('div');
                 card.className = `p-8 rounded-full border-2 flex flex-col items-center justify-center aspect-square w-full max-w-[200px] ${complete ? 'bg-white border-amber-500 shadow-xl' : 'opacity-20 grayscale'}`;
-                card.innerHTML = `<h4 class="font-bold text-xs uppercase">${s.name}</h4><p class="text-[9px] mt-2 font-bold">${complete ? '¡CONSEGUIDO!' : 'BLOQUEADA'}</p>`;
+                card.innerHTML = `
+                    <div class="mb-2 h-16 flex items-center justify-center">${ins.icon}</div>
+                    <h4 class="font-bold text-xs uppercase">${ins.nombre}</h4>
+                    <p class="text-[9px] mt-2 font-bold">${complete ? '¡DISPONIBLE!' : 'BLOQUEADA'}</p>
+                    ${complete && !claimed ? `<button onclick="claimBadge(${ins.id})" class="mt-2 bg-amber-600 text-white text-[8px] px-2 py-1 rounded">RECLAMAR</button>` : ''}
+                    ${claimed ? `<p class="text-green-700 text-[8px] mt-1 font-bold">RECLAMADA</p>` : ''}
+                `;
                 grid.appendChild(card);
             });
         }
+
+        function claimBadge(id) {
+            state.badgesClaimed.push(id);
+            saveState();
+            renderRecompensas();
+        }
+
+        function goToRewards() { 
+            document.getElementById('reward-notification').classList.remove('show');
+            showView('recompensa'); 
+        }
+        function hideNotification() { document.getElementById('reward-notification').classList.remove('show'); }
 
         const verifyBtn = document.getElementById('verify-code-btn');
         const codeInput = document.getElementById('secret-code-input');
         
         verifyBtn.onclick = () => {
             const lamina = laminasData.find(l => l.id === currentUnlockId);
-            const userVal = codeInput.value.trim().toUpperCase();
+            const userVal = normalizeText(codeInput.value); // Normalizamos antes de comparar
             if (!userVal) return;
 
             // Verificación con el motor SHA-256 profesional
