@@ -121,9 +121,30 @@
             position: relative;
             overflow: hidden;
         }
+        
+        /* Ajustes de Zoom para desplazamiento */
+        .zoom-container {
+            overflow: auto !important;
+            display: block !important;
+        }
+        
+        .zoom-container::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .zoom-container::-webkit-scrollbar-thumb {
+            background: #d4af37;
+            border-radius: 4px;
+        }
+        .zoom-container::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+        }
+
         .zoomed-image {
-            transition: transform 0.3s ease-out;
-            transform-origin: center;
+            display: block;
+            margin: 0 auto;
+            max-width: none !important;
+            transition: width 0.1s ease-out;
         }
 
         @keyframes gold-pulse {
@@ -275,7 +296,7 @@
             <div class="perspective-[1500px] w-full max-w-[400px] aspect-[2/3]" id="viewer-card-container">
                 <div class="card-inner relative" id="card-element">
                     <div class="card-front zoom-container rounded shadow-2xl bg-stone-900">
-                        <img id="viewer-image" src="" class="zoomed-image w-full h-full object-cover">
+                        <img id="viewer-image" src="" class="zoomed-image w-full h-auto">
                     </div>
                     <div class="card-back text-center rounded shadow-2xl">
                         <span id="viewer-number" class="absolute top-4 right-8 text-stone-950/10 text-8xl font-bold font-serif pointer-events-none select-none"></span>
@@ -299,127 +320,48 @@
     <div id="code-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center z-[80] p-4">
         <div class="bg-[#f4e4bc] border-4 border-stone-800 p-8 max-w-sm w-full mx-4 rounded-sm shadow-2xl text-center relative" style="background-image: url('https://www.transparenttextures.com/patterns/aged-paper.png');">
             <button onclick="document.getElementById('code-modal').classList.add('hidden')" class="absolute top-2 right-4 text-3xl text-stone-600 hover:text-stone-900 font-bold">&times;</button>
-            <h2 class="text-2xl font-bold mb-2 text-stone-900 uppercase tracking-tighter">Cifrado Imperial</h2>
-            <p class="text-[10px] text-stone-600 uppercase tracking-widest mb-2 italic">Ingresa el código revelado en el video</p>
-            <input type="text" id="secret-code-input" placeholder="PALABRA CLAVE" class="w-full bg-stone-100 border-2 border-stone-400 p-3 text-center text-xl font-bold uppercase my-4 font-sans shadow-inner focus:outline-none focus:ring-2 focus:ring-amber-600 transition-all">
-            <button id="verify-code-btn" class="px-6 py-3 bg-stone-800 text-white font-bold rounded hover:bg-stone-700 shadow-lg w-full uppercase transition-all">Restaurar Fragmento</button>
+            <h2 class="text-2xl font-bold mb-2 text-stone-900 uppercase tracking-tighter">CÓDIGO SECRETO</h2>
+            <p class="text-[10px] text-stone-600 uppercase tracking-widest mb-2 italic">Ingresa tus hallazgos aquí:</p>
+            <input type="text" id="secret-code-input" placeholder="PALABRAS CLAVE" class="w-full bg-stone-100 border-2 border-stone-400 p-3 text-center text-xl font-bold uppercase my-4 font-sans shadow-inner focus:outline-none focus:ring-2 focus:ring-amber-600 transition-all">
+            <button id="verify-code-btn" class="px-6 py-3 bg-stone-800 text-white font-bold rounded hover:bg-stone-700 shadow-lg w-full uppercase transition-all tracking-widest">OBTENER LÁMINA</button>
         </div>
     </div>
 
     <script>
-        /**
-         * MOTOR DE VALIDACIÓN ROBUSTO
-         * Este motor ignora tildes, espacios y mayúsculas/minúsculas para evitar errores humanos.
-         */
-        const sha256 = (function() {
-            function rotateRight(n, x) { return (x >>> n) | (x << (32 - n)); }
-            function choice(x, y, z) { return (x & y) ^ (~x & z); }
-            function majority(x, y, z) { return (x & y) ^ (x & z) ^ (y & z); }
-            function sigma0(x) { return rotateRight(2, x) ^ rotateRight(13, x) ^ rotateRight(22, x); }
-            function sigma1(x) { return rotateRight(6, x) ^ rotateRight(11, x) ^ rotateRight(25, x); }
-            function gamma0(x) { return rotateRight(7, x) ^ rotateRight(18, x) ^ (x >>> 3); }
-            function gamma1(x) { return rotateRight(17, x) ^ rotateRight(19, x) ^ (x >>> 10); }
-
-            const K = [
-                0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-                0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-                0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-                0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-                0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-                0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-                0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-                0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
-            ];
-
-            return function(msg) {
-                const utf8 = unescape(encodeURIComponent(msg));
-                const words = [];
-                for (let i = 0; i < utf8.length; i++) words[i >> 2] |= utf8.charCodeAt(i) << (24 - (i % 4) * 8);
-
-                const bitLen = utf8.length * 8;
-                words[bitLen >> 5] |= 0x80 << (24 - (bitLen % 32));
-                words[(((bitLen + 64) >> 9) << 4) + 15] = bitLen;
-
-                let h0 = 0x6a09e667, h1 = 0xbb67ae85, h2 = 0x3c6ef372, h3 = 0xa54ff53a,
-                    h4 = 0x510e527f, h5 = 0x9b05688c, h6 = 0x1f83d9ab, h7 = 0x5be0cd19;
-
-                for (let i = 0; i < words.length; i += 16) {
-                    const w = new Array(64);
-                    for (let t = 0; t < 16; t++) w[t] = words[i + t] || 0;
-                    for (let t = 16; t < 64; t++) {
-                        w[t] = (gamma1(w[t - 2]) + w[t - 7] + gamma0(w[t - 15]) + w[t - 16]) | 0;
-                    }
-                    let a = h0, b = h1, c = h2, d = h3, e = h4, f = h5, g = h6, h = h7;
-                    for (let t = 0; t < 64; t++) {
-                        const t1 = (h + sigma1(e) + choice(e, f, g) + K[t] + w[t]) | 0;
-                        const t2 = (sigma0(a) + majority(a, b, c)) | 0;
-                        h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
-                    }
-                    h0 = (h0 + a) | 0; h1 = (h1 + b) | 0; h2 = (h2 + c) | 0; h3 = (h3 + d) | 0;
-                    h4 = (h4 + e) | 0; h5 = (h5 + f) | 0; h6 = (h6 + g) | 0; h7 = (h7 + h) | 0;
-                }
-                return [h0, h1, h2, h3, h4, h5, h6, h7].map(h => (h >>> 0).toString(16).padStart(8, '0')).join('');
-            };
-        })();
-
-        // Función para limpiar tildes y caracteres raros
-        function normalizeText(text) {
-            return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
-        }
-
-        const configuracionPaginas = {
-            1: { simbolo: "https://www.transparentpng.com/download/geometric/geometric-transparent-1.png" }, 
-            2: { simbolo: "https://www.transparentpng.com/download/geometric/geometric-transparent-2.png" }  
-        };
-
-        const laminasData = [
-            { id: 1, nombre: "El Éxodo Místico", img: "lamina01.jpg", hash: "945564883311652709e99994998064d4715f5e670490b49741097839352e6977", mision: "¿Sabías que la ciudad nació de una visión mística?", shortDesc: "El inicio de la gran Tenochtitlán bajo la señal divina del águila y la serpiente." }, 
-            { id: 2, nombre: "El Oro de Moctezuma", img: "lamina02.jpg", hash: "4d76711909780183141443679110757211116174620023a9d554a9388c52089c", mision: "¿Sabías que encontraron una ofrenda de oro enterrada en el Templo Mayor?", shortDesc: "Tesoros rituales enterrados en el corazón del imperio mexica." }, 
-            { id: 3, nombre: "Tecnología y Sonidos de Muerte", img: "lamina03.jpg", hash: "8680f4f9f78310c89693172e27623512a3826065500e84b80b7218684784407b", mision: "Sube el volumen... ¿Qué sientes al escuchar esto?", shortDesc: "Análisis de los silbatos de la muerte aztecas." }, 
-            { id: 4, nombre: "El diluvio Azteca", img: "lamina04.jpg", hash: "6140e6988894101e4889c2794c4897f1f008889953906323c211111111111111", mision: "¿Cómo es posible que dos culturas separadas cuenten la misma historia?", shortDesc: "Exploración de las sorprendentes coincidencias en los códices mesoamericanos." }, 
-            { id: 5, nombre: "¿Democracia o Imperio?", img: "lamina05.jpg", hash: "3671f5492d7768e7d23d8c97e596700c66042457881077799d691060965e9057", type: "panorama", mision: "¿Los aztecas tenían democracia?", shortDesc: "Un recorrido por la estructura política y social del Tlatoani." }, 
-            { id: 6, nombre: "Sombra del Guerrero", img: "https://picsum.photos/id/1053/600/900", hash: "3e82d8c39294562215d86289f66710777085c8e3175027581335b304c44155a0", mision: "Demuestra tu valor frente a la estatua del jaguar.", shortDesc: "La orden militar de élite y su profunda conexión espiritual." }, 
-            { id: 7, nombre: "Eternidad Cíclica", img: "https://picsum.photos/id/1056/600/900", hash: "069e2b1d3d49f13e71044431e5058f4a132599761962386270e5b7c731494870", mision: "Alinea las sombras del gran calendario durante el solsticio.", shortDesc: "Interpretación de los cinco soles tallados en la majestuosa Piedra del Sol." }, 
-            { id: 8, nombre: "Cénit del Conocimiento", img: "https://picsum.photos/id/1064/600/900", hash: "57651044431e5058f4a132599761962386270e5b7c731494870f7d5492d7768e", mision: "Alcanza la cima del Templo Mayor de la Sabiduría.", shortDesc: "El centro ceremonial sagrado donde el cielo y la tierra se unían." }, 
-            { id: 9, nombre: "Viento Divino", img: "https://picsum.photos/id/1068/600/900", hash: "72d7768e7d23d8c97e596700c66042457881077799d691060965e9057f185790", mision: "Escucha el silbido del viento en la cueva emplumada.", shortDesc: "La elegancia del arte plumario y el quetzal como símbolo divino." }, 
-            { id: 10, nombre: "Ofrenda Sagrada", img: "https://picsum.photos/id/1074/600/900", hash: "185790a36e9e1c4e7232264f74676100c56782a138541249b6b7974e6c46497f", type: "panorama", mision: "Presenta los granos de cacao ante los guardianes.", shortDesc: "El valor del cacao como moneda y ofrenda digna de los dioses." }
+        // ESTRUCTURA DE DATOS
+        const _DATA_MAP = [
+            { id: 1, nombre: "El Éxodo Místico", img: "lamina01.jpg", _key: "UFJPRkVDSUEgQ1VNUExJREE=", mision: "¿Sabías que la ciudad más grande de América nació de una visión mística?", shortDesc: "El inicio de la gran Tenochtitlán bajo la señal divina del águila y la serpiente." },
+            { id: 2, nombre: "El Oro de Moctezuma", img: "lamina02.jpg", _key: "SEFMTEFaR08gVEVNUExPTUFZT1I=", mision: "¿Sabías que encontraron una ofrenda de oro enterrada en el Templo Mayor?", shortDesc: "Tesoros rituales enterrados en el corazón del imperio mexica." },
+            { id: 3, nombre: "Tecnología y Sonidos de Muerte", img: "lamina03.jpg", _key: "TU9SVEFMRVMgU09OSURPUw==", mision: "Sube el volumen... ¿Qué sientes al escuchar esto?", shortDesc: "Análisis de los silbatos de la muerte aztecas." },
+            { id: 4, nombre: "El diluvio Azteca", img: "lamina04.jpg", _key: "RE9TQ1VMVFVSQVMgRElMVVZJTw==", mision: "¿Cómo es posible que dos culturas separadas cuenten la misma historia?", shortDesc: "Exploración de las sorprendentes coincidencias en los códices mesoamericanos." },
+            { id: 5, nombre: "¿Democracia o Imperio?", img: "lamina05.jpg", _key: "RU5JR01BIEFaVEVDQQ==", type: "panorama", mision: "¿Los aztecas tenían democracia?", shortDesc: "Un recorrido por la estructura política y social del Tlatoani." },
+            { id: 6, nombre: "Sombra del Guerrero", img: "https://picsum.photos/id/1053/600/900", _key: "SkFHVUFSA==", mision: "Demuestra tu valor frente a la estatua del jaguar.", shortDesc: "La orden militar de élite y su profunda conexión espiritual." },
+            { id: 7, nombre: "Eternidad Cíclica", img: "https://picsum.photos/id/1056/600/900", _key: "UElFRFJB", mision: "Alinea las sombras del gran calendario durante el solsticio.", shortDesc: "Interpretación de los cinco soles tallados en la majestuosa Piedra del Sol." },
+            { id: 8, nombre: "Cénit del Conocimiento", img: "https://picsum.photos/id/1064/600/900", _key: "VEVNUExP", mision: "Alcanza la cima del Templo Mayor de la Sabiduría.", shortDesc: "El centro ceremonial sagrado donde el cielo y la tierra se unían." },
+            { id: 9, nombre: "Viento Divino", img: "https://picsum.photos/id/1068/600/900", _key: "UExVTUE=", mision: "Escucha el silbido del viento en la cueva emplumada.", shortDesc: "La elegancia del arte plumario y el quetzal como símbolo divino." },
+            { id: 10, nombre: "Ofrenda Sagrada", img: "https://picsum.photos/id/1074/600/900", _key: "Q0FDQU8=", type: "panorama", mision: "Presenta los granos de cacao ante los guardianes.", shortDesc: "El valor del cacao como moneda y ofrenda digna de los dioses." }
         ];
 
         const insigniasLegendarias = [
-            { 
-                id: 1, 
-                set: [1, 2, 3, 4, 5], 
-                nombre: "INSIGNIA LEGADO AZTECA", 
-                icon: `<svg class="w-[94px] h-[94px] mx-auto drop-shadow-lg" viewBox="0 0 230 232" fill="#B8860B"><path d="M1107 2081 c-52 -213 -66 -243 -106 -221 -25 13 -27 33 -5 51 13 11 14 9 8 -15 -6 -24 -4 -27 12 -24 24 4 26 47 3 61 -13 8 -24 6 -43 -6 -48 -32 -26 -108 35 -122 21 -5 34 0 58 22 26 23 36 46 59 136 15 59 29 107 32 107 3 0 17 -48 32 -107 23 -90 33 -113 59 -136 24 -22 37 -27 58 -22 61 14 83 90 35 122 -19 12 -30 14 -43 6 -23 -14 -21 -57 3 -61 16 -3 18 0 12 24 -6 24 -5 26 8 15 22 -18 20 -38 -5 -51 -40 -22 -54 8 -106 221 -26 109 -50 199 -53 199 -3 0 -27 -90 -53 -199z"/></svg>`, 
-                desc: "Otorgada por completar las primeras 5 misiones fundamentales del legado AZTECA." 
-            },
-            { 
-                id: 2, 
-                set: [6, 7, 8, 9, 10], 
-                nombre: "ORIGEN JAGUAR", 
-                icon: `<svg class="w-[70px] h-[70px] mx-auto drop-shadow-lg" viewBox="0 0 24 24" fill="#8B4513"><path d="M12 2c-1.1 0-2 .9-2 2h4c0-1.1-.9-2-2-2zm6 7c0-2.21-1.79-4-4-4h-4c-2.21 0-4 1.79-4 4 0 1.5.82 2.81 2.04 3.5C4.83 13.6 4 15.68 4 18v2c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-2c0-2.32-.83-4.4-2.04-5.5C17.18 11.81 18 10.5 18 9zm-2 11H8v-2c0-2.21 1.79-4 4-4s4 1.79 4 4v2zM12 7c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z"/></svg>`, 
-                desc: "Otorgada por completar el ciclo sagrado de sabiduría del jaguar." 
-            }
+            { id: 1, set: [1, 2, 3, 4, 5], nombre: "INSIGNIA DEL LEGADO AZTECA", icon: `<svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="94px" height="94px" viewBox="0 0 230.000000 232.000000" preserveAspectRatio="xMidYMid meet" class="mx-auto drop-shadow-lg"><g transform="translate(0.000000,232.000000) scale(0.100000,-0.100000)" fill="#B8860B" stroke="none"><path d="M1107 2081 c-52 -213 -66 -243 -106 -221 -25 13 -27 33 -5 51 13 11 14 9 8 -15 -6 -24 -4 -27 12 -24 24 4 26 47 3 61 -13 8 -24 6 -43 -6 -48 -32 -26 -108 35 -122 21 -5 34 0 58 22 26 23 36 46 59 136 15 59 29 107 32 107 3 0 17 -48 32 -107 23 -90 33 -113 59 -136 24 -22 37 -27 58 -22 61 14 83 90 35 122 -19 12 -30 14 -43 6 -23 -14 -21 -57 3 -61 16 -3 18 0 12 24 -6 24 -5 26 8 15 22 -18 20 -38 -5 -51 -40 -22 -54 8 -106 221 -26 109 -50 199 -53 199 -3 0 -27 -90 -53 -199z"/><path d="M760 2071 c0 -15 6 -21 21 -21 25 0 22 33 -4 38 -12 2 -17 -3 -17 -17z"/><path d="M1515 2080 c-8 -13 3 -30 20 -30 14 0 27 24 18 34 -10 9 -31 7 -38 -4z"/><path d="M865 2048 c-51 -17 -165 -71 -165 -77 0 -3 4 -12 9 -20 8 -12 21 -10 78 16 37 17 82 35 98 40 17 5 29 13 28 16 -2 4 -3 14 -3 22 0 17 -4 17 -45 3z"/><path d="M1402 2038 c2 -16 16 -26 53 -38 28 -10 70 -27 94 -40 43 -21 45 -22 58 -4 12 17 9 21 -34 42 -47 24 -148 62 -165 62 -5 0 -8 -10 -6 -22z"/><path d="M832 1971 c-106 -42 -107 -44 -75 -103 38 -70 72 -58 48 19 -6 18 -1 24 30 37 50 21 52 21 66 -19 16 -43 25 -44 34 -6 8 37 -4 101 -19 101 -6 -1 -44 -14 -84 -29z"/><path d="M1381 1965 c-7 -26 -6 -44 3 -67 l13 -31 13 36 c13 41 22 44 74 22 42 -18 41 -16 20 -57 -13 -25 -14 -32 -2 -39 7 -5 16 -9 20 -9 12 0 60 91 55 105 -5 12 -153 75 -176 75 -6 0 -14 -16 -20 -35z"/><path d="M377 1930 c11 -19 57 -95 101 -168 44 -74 83 -136 86 -139 3 -3 10 6 17 20 10 22 7 33 -26 89 -21 35 -41 67 -43 72 -3 6 11 0 31 -12 20 -12 53 -32 73 -43 30 -18 40 -20 61 -10 14 7 23 14 21 17 -3 3 -66 41 -139 86 -74 44 -150 90 -169 102 l-35 21 22 -35z"/><path d="M1800 1865 c-85 -52 -162 -99 -170 -104 -12 -7 -10 -11 12 -21 23 -11 31 -10 65 10 21 13 53 32 72 43 19 12 32 17 29 11 -2 -5 -22 -37 -43 -72 -33 -56 -36 -67 -26 -89 7 -14 13 -24 16 -22 2 2 47 76 100 164 53 88 99 163 102 168 7 12 5 11 -157 -88z"/><path d="M833 1908 c-21 -10 -21 -12 -7 -39 14 -28 15 -29 44 -14 24 13 28 19 21 38 -10 26 -27 30 -58 15z"/><path d="M1424 1895 c-8 -31 -7 -31 28 -40 23 -6 29 -3 37 16 7 18 5 27 -7 37 -26 20 -51 14 -58 -13z"/><path d="M1113 1863 c-9 -21 -18 -40 -20 -43 -2 -3 28 -6 67 -6 39 -1 69 2 67 5 -2 3 -11 23 -20 44 -14 31 -22 37 -47 37 -25 0 -33 -6 -47 -37z"/><path d="M870 1837 c-161 -67 -287 -187 -371 -354 -41 -82 -47 -103 -27 -103 6 0 21 -9 33 -20 l21 -20 28 66 c68 167 212 307 379 369 l48 18 -21 22 c-11 12 -20 27 -20 33 0 16 -6 15 -70 -11z"/><path d="M1380 1848 c0 -6 -9 -21 -20 -33 l-21 -22 58 -22 c164 -62 316 -217 378 -384 l18 -48 22 21 c12 11 27 20 33 20 19 0 14 20 -28 105 -74 149 -185 259 -337 336 -82 41 -103 47 -103 27z"/><path d="M1031 1787 c-56 -12 -67 -22 -52 -46 7 -11 18 -11 60 -2 29 6 65 11 81 11 25 0 30 4 30 25 0 22 -4 25 -32 24 -18 0 -57 -6 -87 -12z"/><path d="M1170 1775 c0 -21 5 -25 30 -25 16 0 52 -5 81 -11 42 -9 53 -9 60 2 5 8 7 19 6 24 -4 11 -94 33 -144 34 -29 1 -33 -2 -33 -24z"/><path d="M861 1724 c-39 -19 -71 -39 -71 -43 0 -5 7 -14 15 -21 12 -10 28 -6 88 25 39 21 73 39 75 40 7 6 -12 35 -23 35 -7 0 -44 -16 -84 -36z"/><path d="M1356 1744 c-4 -9 -5 -18 -4 -19 2 -1 36 -19 75 -40 60 -31 76 -35 88 -25 8 7 15 16 15 21 0 9 -137 79 -155 79 -7 0 -16 -7 -19 -16z"/><path d="M1080 1730 c-236 -37 -428 -213 -481 -440 -16 -70 -16 -190 0 -260 49 -208 222 -382 431 -431 67 -15 197 -15 265 0 200 47 378 227 426 431 44 191 -15 395 -156 535 -128 129 -313 191 -485 165z m261 -42 c92 -34 151 -71 214 -133 216 -217 217 -572 2 -787 -112 -112 -235 -163 -397 -163 -158 0 -282 50 -390 156 -222 219 -224 574 -4 793 71 72 188 137 279 155 81 16 220 6 296 -21z"/><path d="M708 1612 c-58 -59 -61 -64 -45 -80 16 -16 21 -13 79 46 59 58 62 63 46 79 -16 16 -21 13 -80 -45z"/><path d="M1529 1654 c-11 -13 -3 -24 49 -77 57 -57 63 -60 78 -45 15 15 13 20 -32 68 -60 65 -78 75 -95 54z"/><path d="M320 1572 c-23 -49 -60 -148 -60 -164 0 -5 10 -8 22 -6 16 2 26 16 38 53 10 28 27 69 39 92 25 51 25 50 3 62 -16 8 -22 3 -42 -37z"/><path d="M1951 1611 c-12 -8 -10 -21 16 -78 17 -37 35 -81 40 -98 7 -22 15 -29 29 -27 10 2 20 5 22 6 8 9 -75 206 -87 206 -4 0 -12 -4 -20 -9z"/><path d="M1867 1563 c-69 -39 -56 -72 20 -48 18 6 24 1 38 -31 20 -47 17 -55 -26 -70 l-34 -11 28 -13 c20 -10 38 -11 65 -4 30 8 37 13 34 32 -3 30 -62 172 -70 172 -4 0 -29 -12 -55 -27z"/><path d="M380 1559 c-15 -27 -60 -147 -60 -159 0 -5 16 -14 36 -19 28 -8 43 -7 63 4 l26 14 -32 11 c-37 13 -39 22 -18 74 18 42 16 41 57 20 25 -13 32 -14 39 -2 14 21 11 25 -35 52 -54 31 -62 32 -76 5z"/><path d="M233 1544 c-7 -19 11 -39 26 -30 16 10 13 33 -4 40 -9 3 -18 -1 -22 -10z"/><path d="M2050 1539 c0 -25 33 -22 38 4 2 12 -3 17 -17 17 -15 0 -21 -6 -21 -21z"/><path d="M596 1461 c-40 -77 -44 -96 -20 -105 9 -4 18 -5 19 -4 9 13 75 144 75 150 0 4 -9 12 -19 17 -16 9 -23 2 -55 -58z"/><path d="M1660 1515 c-18 -22 56 -164 82 -157 10 2 18 11 18 19 0 19 -70 153 -80 153 -4 0 -13 -7 -20 -15z"/><path d="M1867 1494 c-26 -14 -27 -16 -12 -43 11 -22 20 -28 36 -24 28 8 33 26 17 56 -12 24 -15 25 -41 11z"/><path d="M410 1480 c-17 -31 -12 -49 15 -56 31 -8 35 -4 38 31 3 36 -37 55 -53 25z"/><path d="M393 1344 c-12 -19 -14 -30 -6 -43 14 -23 57 -21 61 3 3 16 0 18 -24 12 -24 -6 -26 -5 -15 8 18 22 38 20 51 -5 22 -39 -8 -54 -220 -105 -110 -27 -200 -51 -200 -54 0 -3 90 -27 200 -54 212 -51 242 -66 220 -105 -13 -25 -33 -27 -51 -5 -11 13 -9 14 15 8 24 -6 27 -4 24 12 -4 24 -47 26 -61 3 -8 -13 -6 -24 6 -43 32 -47 108 -26 122 35 5 19 0 34 -19 56 -20 24 -45 36 -121 57 -52 14 -102 26 -110 26 -8 0 -15 4 -15 8 0 5 35 16 78 26 145 34 201 73 186 130 -14 57 -90 76 -121 30z"/><path d="M1832 1353 c-36 -30 -38 -66 -5 -102 23 -26 46 -36 136 -59 59 -15 107 -30 107 -34 0 -5 -7 -8 -15 -8 -8 0 -58 -12 -110 -26 -76 -21 -101 -33 -121 -57 -19 -22 -24 -37 -19 -56 14 -61 90 -82 122 -35 12 19 14 30 6 43 -14 23 -57 21 -61 -3 -3 -16 0 -18 24 -12 24 6 26 5 15 -8 -18 -22 -38 -20 -51 5 -22 40 8 54 221 106 109 26 199 50 199 53 0 3 -90 27 -199 53 -213 52 -243 66 -221 106 13 25 33 27 51 5 11 -13 9 -14 -15 -8 -24 6 -27 4 -24 -12 4 -24 47 -26 61 -3 8 13 6 24 -6 43 -21 31 -64 35 -95 9z"/><path d="M546 1342 c-6 -11 -26 -123 -26 -149 0 -18 6 -23 24 -23 21 0 24 6 29 53 3 28 9 66 12 83 6 26 4 32 -14 37 -12 3 -23 2 -25 -1z"/><path d="M1746 1342 c-15 -3 -17 -10 -11 -35 3 -18 9 -56 12 -84 5 -47 8 -53 29 -53 28 0 28 6 13 100 -11 72 -15 79 -43 72z"/><path d="M458 1208 c-31 -16 -38 -25 -38 -49 0 -24 7 -32 38 -46 20 -9 39 -18 42 -20 3 -2 6 28 6 67 1 38 -2 69 -5 69 -3 -1 -23 -10 -43 -21z"/><path d="M1813 1160 c0 -39 3 -69 6 -67 3 2 23 11 44 20 31 14 37 22 37 47 0 25 -6 33 -37 47 -21 9 -41 18 -44 20 -3 2 -6 -28 -6 -67z"/><path d="M521 1118 c1 -51 23 -141 34 -145 6 -1 16 1 24 6 11 7 11 18 2 60 -6 29 -11 65 -11 81 0 25 -4 30 -25 30 -22 0 -25 -4 -24 -32z"/><path d="M1750 1120 c0 -16 -5 -52 -11 -80 -12 -57 -12 -57 16 -62 17 -2 22 5 32 52 6 30 12 70 12 88 1 28 -2 32 -24 32 -21 0 -25 -5 -25 -30z"/><path d="M505 960 c-10 -11 -24 -20 -32 -20 -21 0 -16 -18 27 -105 74 -150 184 -259 340 -337 79 -40 100 -46 100 -26 0 6 9 21 20 33 l21 22 -58 22 c-161 62 -299 198 -368 362 -15 35 -28 65 -29 67 -2 1 -11 -7 -21 -18z"/><path d="M1775 933 c-62 -168 -219 -325 -388 -388 l-48 -18 21 -22 c11 -12 20 -27 20 -33 0 -20 21 -14 100 26 155 77 266 188 340 337 42 85 47 105 28 105 -6 0 -21 9 -33 20 l-22 21 -18 -48z"/><path d="M578 962 c-26 -5 -22 -26 18 -103 36 -68 49 -77 66 -48 13 22 -62 156 -84 151z"/><path d="M1686 893 c-31 -60 -36 -76 -26 -88 7 -8 16 -15 20 -15 10 0 80 134 80 153 0 8 -8 17 -18 19 -14 4 -26 -11 -56 -69z"/><path d="M1900 935 l-25 -14 33 -11 c36 -13 38 -22 17 -74 -18 -42 -16 -41 -57 -20 -25 13 -32 14 -39 2 -5 -7 -9 -16 -9 -20 0 -12 91 -60 105 -55 12 5 75 153 75 176 0 9 -14 15 -60 26 -8 2 -26 -2 -40 -10z"/><path d="M342 929 c-27 -10 -26 -14 20 -126 16 -40 34 -73 39 -73 4 0 29 12 54 28 66 39 52 70 -22 47 -19 -6 -24 -1 -38 31 -20 47 -15 60 26 69 31 7 32 8 14 21 -21 16 -59 17 -93 3z"/><path d="M278 913 c-10 -3 -18 -6 -18 -7 0 -11 42 -120 61 -158 25 -51 26 -53 48 -39 12 8 10 21 -17 78 -17 37 -34 80 -38 96 -7 31 -12 35 -36 30z"/><path d="M2017 913 c-2 -5 -10 -26 -17 -48 -7 -22 -24 -62 -37 -89 -24 -48 -24 -50 -7 -63 17 -12 21 -9 42 34 24 46 62 148 62 165 0 10 -37 11 -43 1z"/><path d="M423 890 c-26 -11 -28 -19 -12 -54 11 -24 13 -24 40 -10 29 14 29 15 14 44 -9 17 -17 30 -18 29 -1 0 -12 -4 -24 -9z"/><path d="M1856 874 c-8 -30 -1 -41 29 -46 26 -4 47 48 25 62 -27 17 -48 11 -54 -16z"/><path d="M2053 794 c-7 -18 17 -38 31 -24 11 11 1 40 -14 40 -6 0 -13 -7 -17 -16z"/><path d="M237 793 c-14 -13 -6 -33 13 -33 13 0 20 7 20 20 0 19 -20 27 -33 13z"/><path d="M660 785 c-11 -13 -3 -25 49 -77 58 -58 63 -61 78 -45 16 16 14 21 -42 77 -33 33 -62 60 -66 60 -4 0 -12 -7 -19 -15z"/><path d="M1575 740 c-56 -56 -58 -61 -42 -77 15 -16 20 -13 78 45 52 52 60 64 49 77 -7 8 -15 15 -19 15 -4 0 -33 -27 -66 -60z"/><path d="M487 574 c-42 -71 -88 -149 -103 -174 l-28 -44 35 21 c19 11 95 58 169 102 74 45 136 84 138 86 3 2 -7 9 -21 16 -21 10 -31 8 -61 -10 -20 -11 -52 -31 -72 -43 l-37 -21 28 49 c16 27 35 58 42 69 16 25 16 37 0 59 -12 16 -21 5 -90 -110z"/><path d="M1739 677 c-10 -21 -8 -31 10 -61 11 -20 31 -53 43 -73 l22 -37 -39 23 c-111 67 -105 64 -132 52 -14 -7 -24 -14 -22 -16 3 -2 69 -43 149 -91 80 -48 156 -94 170 -103 13 -9 21 -11 18 -6 -3 6 -50 82 -103 170 -53 88 -98 162 -100 164 -3 2 -9 -8 -16 -22z"/><path d="M799 654 c-15 -18 -13 -20 73 -64 66 -34 83 -37 92 -14 4 9 5 18 4 19 -5 5 -148 75 -152 75 -2 0 -9 -7 -17 -16z"/><path d="M1424 632 c-52 -28 -69 -41 -66 -54 5 -25 24 -22 90 12 86 44 88 46 73 64 -17 21 -14 21 -97 -22z"/><path d="M977 571 c-6 -26 -5 -27 67 -40 91 -17 106 -15 106 13 0 21 -6 24 -52 29 -29 3 -67 9 -84 12 -26 6 -32 4 -37 -14z"/><path d="M1275 580 c-16 -4 -47 -8 -67 -9 -34 -1 -38 -4 -38 -26 0 -29 14 -31 106 -14 67 12 77 19 68 42 -7 18 -20 19 -69 7z"/><path d="M993 510 c-26 -11 -43 -40 -43 -74 0 -33 44 -65 69 -49 23 14 21 57 -3 61 -16 3 -18 0 -12 -24 6 -24 5 -26 -8 -15 -22 18 -20 38 5 51 40 22 54 -8 106 -221 26 -109 50 -199 53 -199 3 0 27 90 53 199 52 213 66 243 106 221 25 -13 27 -33 5 -51 -13 -11 -14 -9 -8 15 6 24 4 27 -12 24 -24 -4 -26 -47 -3 -61 13 -8 24 -6 43 6 47 32 26 108 -35 122 -19 5 -34 0 -56 -19 -24 -20 -36 -45 -57 -121 -14 -52 -26 -102 -26 -110 0 -8 -4 -15 -8 -15 -5 0 -16 35 -26 78 -25 105 -44 149 -74 172 -27 22 -36 23 -69 10z"/><path d="M1093 501 c2 -3 11 -23 20 -43 14 -32 22 -38 47 -38 25 0 33 6 47 38 9 20 18 40 20 43 2 3 -28 6 -67 6 -39 0 -69 -3 -67 -6z"/><path d="M765 454 c-15 -25 -24 -51 -22 -59 5 -12 153 -75 176 -75 6 0 15 16 20 36 8 28 7 43 -4 63 l-14 26 -11 -32 c-13 -37 -22 -39 -74 -18 -42 18 -41 16 -20 57 13 25 14 32 2 39 -21 14 -25 11 -53 -37z"/><path d="M1504 486 c-3 -8 -1 -23 5 -35 17 -31 13 -40 -26 -56 -46 -19 -59 -15 -68 24 -4 17 -10 31 -15 31 -22 0 -22 -111 0 -125 10 -6 134 39 168 61 l23 15 -27 49 c-27 50 -50 63 -60 36z"/><path d="M1448 465 c-19 -11 -25 -20 -21 -35 8 -29 20 -34 53 -20 29 12 29 13 14 41 -8 16 -16 29 -17 29 -1 -1 -14 -7 -29 -15z"/><path d="M831 449 c-7 -18 -5 -27 7 -36 26 -21 51 -15 58 12 8 31 7 31 -28 40 -23 6 -29 3 -37 -16z"/><path d="M711 362 c-8 -16 -3 -22 37 -42 49 -23 148 -60 164 -60 5 0 8 10 6 22 -2 16 -16 26 -53 38 -28 10 -69 27 -92 39 -51 25 -50 25 -62 3z"/><path d="M1555 363 c-16 -9 -57 -27 -90 -39 -47 -17 -59 -26 -57 -41 2 -10 5 -19 6 -21 7 -6 183 65 204 83 1 1 0 10 -4 19 -8 20 -21 20 -59 -1z"/><path d="M766 255 c-3 -9 1 -18 10 -22 19 -7 39 11 30 26 -10 16 -33 13 -40 -4z"/><path d="M1522 253 c5 -26 38 -29 38 -4 0 15 -6 21 -21 21 -14 0 -19 -5 -17 -17z"/></g></svg>`, desc: "Otorgada por completar las primeras 5 misiones fundamentales del legado AZTECA" },
+            { id: 2, set: [6, 7, 8, 9, 10], nombre: "INSIGNIA DE LOS ORÍGENES", icon: `<svg class="w-[85px] h-[85px] mx-auto drop-shadow-lg" viewBox="0 0 24 24" fill="#8B4513"><path d="M12 2c-1.1 0-2 .9-2 2h4c0-1.1-.9-2-2-2zm6 7c0-2.21-1.79-4-4-4h-4c-2.21 0-4 1.79-4 4 0 1.5.82 2.81 2.04 3.5C4.83 13.6 4 15.68 4 18v2c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-2c0-2.32-.83-4.4-2.04-5.5C17.18 11.81 18 10.5 18 9zm-2 11H8v-2c0-2.21 1.79-4 4-4s4 1.79 4 4v2zM12 7c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z"/></svg>`, desc: "Otorgada por completar el ciclo sagrado de sabiduría del jaguar." }
         ];
 
         let state = JSON.parse(localStorage.getItem('alexandria_final')) || { laminasOwned: {}, badgesClaimed: [], currentPage: 1 };
-        let currentUnlockId = null;
+        let _currentID = null;
 
         function saveState() { 
             localStorage.setItem('alexandria_final', JSON.stringify(state)); 
-            updateProgressBar();
-            updateNavAlerts();
+            _updateUI();
         }
 
-        function updateProgressBar() {
+        function _updateUI() {
             const count = Object.keys(state.laminasOwned).length;
             const bar = document.getElementById('progress-bar-fill');
             const counter = document.getElementById('sticker-counter');
             if (bar) bar.style.width = `${(count / 10) * 100}%`;
             if (counter) counter.innerText = count;
-        }
 
-        function updateNavAlerts() {
             const nav = document.getElementById('nav-recompensa');
             const sets = [[1,2,3,4,5], [6,7,8,9,10]];
             const hasNew = sets.some((set, i) => set.every(id => state.laminasOwned[id]) && !state.badgesClaimed.includes(i + 1));
@@ -452,31 +394,31 @@
             const fixedHeight = "230px"; 
             const container = document.createElement('div');
             container.className = "flex items-end justify-between w-full gap-12 pb-4 relative z-10";
-            const currentData = state.currentPage === 1 ? laminasData.slice(0, 5) : laminasData.slice(5, 10);
+            
+            const currentData = state.currentPage === 1 ? _DATA_MAP.slice(0, 5) : _DATA_MAP.slice(5, 10);
             const pano = currentData.find(l => l.type === "panorama");
             const normals = currentData.filter(l => l.type !== "panorama");
 
-            const panoEl = createStickerElement(pano, true);
-            panoEl.style.height = fixedHeight;
+            const panoCard = createStickerElement(pano, true);
+            panoCard.style.height = fixedHeight;
 
-            const grid = document.createElement('div');
-            grid.className = "grid grid-cols-2 gap-6 w-full";
+            const gridContainer = document.createElement('div');
+            gridContainer.className = "grid grid-cols-2 gap-6 w-full";
             normals.forEach(l => {
                 const card = createStickerElement(l);
                 card.style.height = fixedHeight;
-                grid.appendChild(card);
+                gridContainer.appendChild(card);
             });
 
-            const leftPart = document.createElement('div'); leftPart.className = "flex-1 flex items-end";
-            const rightPart = document.createElement('div'); rightPart.className = "flex-1 flex items-end";
-
             if (isOdd) {
-                leftPart.classList.add('justify-start'); leftPart.appendChild(panoEl);
-                rightPart.classList.add('justify-center'); rightPart.appendChild(grid);
+                const leftPart = document.createElement('div'); leftPart.className = "flex-1 flex items-end justify-start";
+                const rightPart = document.createElement('div'); rightPart.className = "flex-1 flex items-end justify-center";
+                leftPart.appendChild(panoCard); rightPart.appendChild(gridContainer);
                 container.appendChild(leftPart); container.appendChild(rightPart);
             } else {
-                leftPart.classList.add('justify-center'); leftPart.appendChild(grid);
-                rightPart.classList.add('justify-end'); rightPart.appendChild(panoEl);
+                const leftPart = document.createElement('div'); leftPart.className = "flex-1 flex items-end justify-center";
+                const rightPart = document.createElement('div'); rightPart.className = "flex-1 flex items-end justify-end";
+                leftPart.appendChild(gridContainer); rightPart.appendChild(panoCard);
                 container.appendChild(leftPart); container.appendChild(rightPart);
             }
             body.appendChild(container);
@@ -495,7 +437,7 @@
             } else {
                 card.innerHTML = `<span class="text-3xl font-bold text-stone-900/40 font-serif">${lamina.id}</span>`;
                 card.onclick = (e) => { 
-                    e.stopPropagation(); currentUnlockId = lamina.id; 
+                    e.stopPropagation(); _currentID = lamina.id; 
                     const modal = document.getElementById('code-modal');
                     const input = document.getElementById('secret-code-input');
                     input.value = ''; modal.classList.remove('hidden'); input.focus(); 
@@ -505,7 +447,16 @@
         }
 
         function openViewer(lamina) {
-            document.getElementById('viewer-image').src = lamina.img; 
+            const viewerImg = document.getElementById('viewer-image');
+            const zoomContainer = document.querySelector('.zoom-container');
+            const zoomSlider = document.getElementById('zoom-slider');
+            
+            viewerImg.src = lamina.img; 
+            viewerImg.style.width = '100%'; 
+            zoomSlider.value = 1;
+            zoomContainer.scrollTop = 0; 
+            zoomContainer.scrollLeft = 0; 
+            
             document.getElementById('viewer-title').innerText = lamina.nombre; 
             document.getElementById('viewer-desc').innerText = lamina.shortDesc || lamina.mision;
             document.getElementById('viewer-number').innerText = lamina.id; 
@@ -513,8 +464,13 @@
             document.getElementById('viewer-modal').classList.remove('hidden');
         }
 
-        function closeViewer() { document.getElementById('viewer-modal').classList.add('hidden'); }
-        function flipCard() { document.getElementById('card-element').classList.toggle('card-flipped'); }
+        function closeViewer() { 
+            document.getElementById('viewer-modal').classList.add('hidden'); 
+        }
+
+        function flipCard() { 
+            document.getElementById('card-element').classList.toggle('card-flipped'); 
+        }
 
         function renderPagination() {
             const container = document.getElementById('pagination-controls');
@@ -529,12 +485,28 @@
 
         function renderMisiones() {
             const list = document.getElementById('misiones-list'); list.innerHTML = '';
-            laminasData.forEach(l => {
-                const owned = state.laminasOwned[l.id];
-                const div = document.createElement('div');
-                div.className = `p-4 border-2 rounded ${owned ? 'opacity-50 border-[#d4af37]' : 'border-dashed border-stone-400'}`;
-                div.innerHTML = `<h4 class="font-bold text-stone-900 uppercase text-xs">${l.id}. ${l.nombre}</h4><p class="text-[11px] italic mt-1 leading-tight">${l.mision}</p>`;
-                list.appendChild(div);
+            const titulosPaginas = ["EL IMPERIO DEL SOL", "LEGADO DEL JAGUAR"];
+            const misionesPorPagina = [_DATA_MAP.slice(0, 5), _DATA_MAP.slice(5, 10)];
+            misionesPorPagina.forEach((grupo, index) => {
+                const sectionHeader = document.createElement('div');
+                sectionHeader.className = "col-span-full mt-6 mb-4 pb-1 border-b-2 border-stone-800/20";
+                sectionHeader.innerHTML = `<h3 class="text-xl md:text-2xl font-bold text-stone-800 tracking-tighter uppercase">${titulosPaginas[index]}</h3>`;
+                list.appendChild(sectionHeader);
+                grupo.forEach(l => {
+                    const owned = state.laminasOwned[l.id];
+                    const item = document.createElement('div');
+                    item.className = `p-4 border-2 transition-all ${owned ? 'opacity-50 border-[#d4af37] bg-stone-100/60' : 'border-dashed border-stone-400 bg-stone-100/40'} rounded flex justify-between items-center`;
+                    item.innerHTML = `
+                        <div class="pr-4">
+                            <h4 class="font-bold text-stone-900 uppercase text-xs tracking-wider">${l.id}. ${l.nombre}</h4>
+                            <p class="text-[11px] leading-tight text-stone-700 mt-1 italic">${l.mision}</p>
+                        </div>
+                        <div class="shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-xs ${owned ? 'bg-[#d4af37] text-stone-900 border-[#b38b00]' : 'border-stone-400 text-stone-400'}">
+                            ${owned ? '✓' : l.id}
+                        </div>
+                    `;
+                    list.appendChild(item);
+                });
             });
         }
 
@@ -544,22 +516,30 @@
                 const complete = ins.set.every(id => state.laminasOwned[id]);
                 const claimed = state.badgesClaimed.includes(ins.id);
                 const card = document.createElement('div');
-                card.className = `p-8 rounded-full border-2 flex flex-col items-center justify-center aspect-square w-full max-w-[200px] ${complete ? 'bg-white border-amber-500 shadow-xl' : 'opacity-20 grayscale'}`;
+                
+                let medalEffect = '';
+                if (claimed) {
+                    medalEffect = 'border-amber-200/40 bg-[#fffef0] shadow-[0_15px_35px_rgba(184,134,11,0.2),inset_0_0_20px_rgba(212,175,55,0.1)]';
+                } else if (complete) {
+                    medalEffect = 'border-amber-400 bg-white shadow-[0_0_40px_rgba(212,175,55,0.7)] animate-pulse';
+                } else {
+                    medalEffect = 'border-dashed border-stone-300 opacity-40 grayscale bg-stone-100/10';
+                }
+
+                card.className = `p-8 rounded-full text-center border-2 transition-all flex flex-col items-center justify-center aspect-square w-full max-w-[280px] mx-auto relative ${medalEffect}`;
+                
                 card.innerHTML = `
-                    <div class="mb-2 h-16 flex items-center justify-center">${ins.icon}</div>
-                    <h4 class="font-bold text-xs uppercase">${ins.nombre}</h4>
-                    <p class="text-[9px] mt-2 font-bold">${complete ? '¡DISPONIBLE!' : 'BLOQUEADA'}</p>
-                    ${complete && !claimed ? `<button onclick="claimBadge(${ins.id})" class="mt-2 bg-amber-600 text-white text-[8px] px-2 py-1 rounded">RECLAMAR</button>` : ''}
-                    ${claimed ? `<p class="text-green-700 text-[8px] mt-1 font-bold">RECLAMADA</p>` : ''}
+                    <div class="mb-2 h-24 flex items-center justify-center relative z-10">${ins.icon}</div>
+                    <h4 class="font-bold text-stone-900 uppercase text-[14px] tracking-widest leading-tight mb-2 relative z-10">${ins.nombre}</h4>
+                    <p class="text-stone-700 italic leading-relaxed px-4 relative z-10 font-serif" style="font-size: 11px;">${ins.desc}</p>
+                    ${complete && !claimed ? `<button onclick="claimBadge(${ins.id})" class="mt-4 bg-amber-600 text-white px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg hover:bg-amber-700 transition-colors relative z-20">RECLAMAR</button>` : !complete ? `<p class="text-stone-500 text-[10px] mt-3 italic relative z-10">Misión pendiente</p>` : ''}
                 `;
                 grid.appendChild(card);
             });
         }
 
         function claimBadge(id) {
-            state.badgesClaimed.push(id);
-            saveState();
-            renderRecompensas();
+            state.badgesClaimed.push(id); saveState(); renderRecompensas();
         }
 
         function goToRewards() { 
@@ -570,19 +550,17 @@
 
         const verifyBtn = document.getElementById('verify-code-btn');
         const codeInput = document.getElementById('secret-code-input');
-        
-        verifyBtn.onclick = () => {
-            const lamina = laminasData.find(l => l.id === currentUnlockId);
-            const userVal = normalizeText(codeInput.value); // Normalizamos antes de comparar
-            if (!userVal) return;
 
-            // Verificación con el motor SHA-256 profesional
-            if (sha256(userVal) === lamina.hash) {
-                state.laminasOwned[currentUnlockId] = true; saveState();
+        const processCode = () => {
+            const lamina = _DATA_MAP.find(l => l.id === _currentID);
+            const userVal = codeInput.value.trim().toUpperCase();
+            const _encoded = btoa(userVal);
+            
+            if (_encoded === lamina._key) {
+                state.laminasOwned[_currentID] = true; saveState();
                 document.getElementById('code-modal').classList.add('hidden');
                 renderAlbum();
-                const count = Object.keys(state.laminasOwned).length;
-                if (count % 5 === 0) {
+                if (Object.keys(state.laminasOwned).length % 5 === 0) {
                     const toast = document.getElementById('reward-notification');
                     toast.classList.add('show');
                     setTimeout(() => toast.classList.remove('show'), 6000);
@@ -594,7 +572,21 @@
             codeInput.value = '';
         };
 
-        window.onload = () => { showView('portada'); updateProgressBar(); updateNavAlerts(); };
+        verifyBtn.onclick = processCode;
+        codeInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') processCode(); });
+
+        window.onload = () => { 
+            showView('portada'); 
+            _updateUI(); 
+            
+            const zoomSlider = document.getElementById('zoom-slider');
+            const viewerImg = document.getElementById('viewer-image');
+            
+            zoomSlider.addEventListener('input', function(e) {
+                const val = parseFloat(this.value);
+                viewerImg.style.width = (val * 100) + '%';
+            });
+        };
     </script>
 </body>
 </html>
