@@ -31,7 +31,7 @@
             position: absolute;
             inset: 0;
             pointer-events: none;
-            z-index: 10; 
+            z-index: 15; 
             background-image: 
                 radial-gradient(circle at 20% 30%, rgba(80, 40, 0, 0.1) 0%, transparent 20%),
                 radial-gradient(circle at 85% 75%, rgba(100, 50, 0, 0.08) 0%, transparent 25%),
@@ -48,6 +48,27 @@
             box-shadow: 
                 inset 0 0 80px rgba(100, 70, 30, 0.2),
                 inset 0 0 20px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        /* Contenedor para el PNG de fondo del álbum */
+        .page-background-graphic {
+            position: absolute;
+            inset: 0;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            opacity: 0.15; /* Opacidad baja para que parezca marca de agua */
+            padding: 2rem;
+            mix-blend-mode: multiply;
+        }
+
+        .page-background-graphic img, .page-background-graphic svg {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
         }
 
         .leather-cover {
@@ -122,7 +143,6 @@
             overflow: hidden;
         }
         
-        /* Ajustes de Zoom para desplazamiento */
         .zoom-container {
             overflow: auto !important;
             display: block !important;
@@ -249,6 +269,9 @@
         <div id="view-album" class="view-section hidden">
             <div id="album-content-wrapper" class="album-container paper-page overflow-hidden">
                 <div class="aging-overlay"></div>
+                <!-- Gráfico de fondo dinámico -->
+                <div id="page-bg-graphic" class="page-background-graphic"></div>
+                
                 <div id="album-page-header" class="absolute top-10 z-30 transition-all duration-500"></div>
                 <div id="album-page-body" class="relative z-20 w-full h-full p-8 md:p-14 flex flex-col justify-end"></div>
             </div>
@@ -384,13 +407,24 @@
         function renderAlbum() {
             const body = document.getElementById('album-page-body');
             const header = document.getElementById('album-page-header');
-            if (!body || !header) return;
+            const bgContainer = document.getElementById('page-bg-graphic');
+            if (!body || !header || !bgContainer) return;
+            
             body.innerHTML = '';
             const isOdd = state.currentPage % 2 !== 0;
             const titulos = ["EL IMPERIO<br>DEL SOL", "LEGADO<br>DEL JAGUAR"];
             header.className = `absolute top-10 ${isOdd ? 'left-10 md:left-14' : 'right-10 md:right-16'} z-30 transition-all duration-500`;
             header.innerHTML = `<h3 class="text-4xl md:text-6xl font-bold uppercase tracking-tighter leading-[0.85] ${isOdd ? 'text-left' : 'text-right'} text-stone-900">${titulos[state.currentPage-1]}</h3>`;
             
+            // Actualizar imagen de fondo del álbum
+            if (state.currentPage === 1) {
+                // Imagen proporcionada azteca.png
+                bgContainer.innerHTML = `<img src="azteca.png" alt="Símbolo Azteca">`;
+            } else {
+                // Símbolo sencillo para la página 2 (Templo Azteca)
+                bgContainer.innerHTML = `<img src="azteca.png" alt="Símbolo Azteca">`;
+            }
+
             const fixedHeight = "230px"; 
             const container = document.createElement('div');
             container.className = "flex items-end justify-between w-full gap-12 pb-4 relative z-10";
