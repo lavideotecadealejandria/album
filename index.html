@@ -384,7 +384,7 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-       
+        // --- CONFIGURACIÓN DE TU PROYECTO FIREBASE ---
         let firebaseConfig = {
             apiKey: "AIzaSyBv2acfXnTnU-ZLBfhWOqwN3o_NYn9EIpo",
   authDomain: "album-archivos-alejandria.firebaseapp.com",
@@ -394,7 +394,6 @@
   appId: "1:885290528156:web:9afbd750956618afbeac59"
         };
 
-        // Fallback automático para el entorno de Canvas (no borrar)
         try {
             if (typeof __firebase_config !== 'undefined' && __firebase_config) {
                 firebaseConfig = JSON.parse(__firebase_config);
@@ -402,12 +401,10 @@
         } catch(e) {}
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'mi-album-alejandria';
-        
         let app, auth, db;
         let isFirebaseActive = false;
 
-        // Intentar inicializar Firebase
-        if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "AQUÍ_TU_API_KEY") {
+        if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "TU_API_KEY") {
             app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
@@ -511,8 +508,8 @@
                 }, { merge: true });
                 syncInd.innerText = "Sincronizado";
             } catch (err) {
-                console.error(err);
-                syncInd.innerText = "Modo Local";
+                console.error("Error al sincronizar:", err);
+                syncInd.innerText = "Error Sinc.";
             }
         }
 
@@ -525,8 +522,14 @@
                     lastGlobalData = data;
                     document.getElementById('global-historians-count').innerText = data.totalUsers || 0;
                     renderRecompensas(data.badgesGlobal || {});
+                } else {
+                    // Si el documento no existe, intentamos crearlo con valores iniciales
+                    setDoc(statsRef, { totalUsers: 0, badgesGlobal: {} }, { merge: true });
                 }
-            }, (error) => { console.error("Error en snapshot global:", error); });
+            }, (error) => { 
+                console.error("Error en snapshot global (posiblemente reglas de Firestore):", error); 
+                document.getElementById('global-historians-count').innerText = "Error";
+            });
         }
 
         // --- UI ---
@@ -675,13 +678,18 @@
         }
 
         window.claimBadge = async (id) => {
-            state.badgesClaimed.push(id); launchCelebration();
-            localStorage.setItem('alexandria_final', JSON.stringify(state)); _updateUI();
+            if (state.badgesClaimed.includes(id)) return;
+            state.badgesClaimed.push(id); 
+            launchCelebration();
+            localStorage.setItem('alexandria_final', JSON.stringify(state)); 
+            _updateUI();
+            
             if (isFirebaseActive) {
                 try { 
                     const globalStatsRef = doc(db, 'artifacts', appId, 'public', 'data', 'stats', 'global');
                     await setDoc(globalStatsRef, { [`badgesGlobal.${id}`]: increment(1) }, { merge: true }); 
-                } catch (e) { console.error("Error al reclamar insignia global:", e); }
+                    console.log("Insignia reclamada globalmente con éxito.");
+                } catch (e) { console.error("Error crítico al reclamar insignia global (Revisa Reglas de Firestore):", e); }
                 syncWithCloud();
             }
             renderRecompensas(lastGlobalData.badgesGlobal);
@@ -714,21 +722,41 @@
             window.showView('portada'); _updateUI();
             if (isFirebaseActive) {
                 try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) { await signInWithCustomToken(auth, __initial_auth_token); }
-                    else { await signInAnonymously(auth); }
+                    // Intento de inicio de sesión anónimo
+                    let userCredential;
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        userCredential = await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        userCredential = await signInAnonymously(auth);
+                    }
+                    
                     onAuthStateChanged(auth, async (u) => {
                         user = u;
                         if (user) {
+                            console.log("Sesión iniciada como:", user.uid);
                             const userProgressRef = doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'progress');
                             const snap = await getDoc(userProgressRef);
-                            if (snap.exists()) { state = { ...state, ...snap.data() }; localStorage.setItem('alexandria_final', JSON.stringify(state)); }
-                            else { const globalStatsRef = doc(db, 'artifacts', appId, 'public', 'data', 'stats', 'global'); await setDoc(globalStatsRef, { totalUsers: increment(1) }, { merge: true }); }
-                            setupGlobalListeners(); _updateUI();
+                            
+                            if (snap.exists()) { 
+                                state = { ...state, ...snap.data() }; 
+                                localStorage.setItem('alexandria_final', JSON.stringify(state)); 
+                            } else { 
+                                const globalStatsRef = doc(db, 'artifacts', appId, 'public', 'data', 'stats', 'global');
+                                await setDoc(globalStatsRef, { totalUsers: increment(1) }, { merge: true }); 
+                            }
+                            
+                            setupGlobalListeners(); 
+                            _updateUI();
                             document.getElementById('sync-indicator').innerText = "Sincronizado";
                         }
                     });
-                } catch (e) { document.getElementById('sync-indicator').innerText = "Modo Local"; }
-            } else { document.getElementById('sync-indicator').innerText = "Modo Local"; }
+                } catch (e) { 
+                    console.error("Fallo de autenticación Firebase. Asegúrate de habilitar 'Inicio de sesión anónimo' en tu consola de Firebase:", e);
+                    document.getElementById('sync-indicator').innerText = "Error Auth"; 
+                }
+            } else { 
+                document.getElementById('sync-indicator').innerText = "Modo Local"; 
+            }
             document.getElementById('zoom-slider').addEventListener('input', (e) => document.getElementById('viewer-image').style.width = (parseFloat(e.target.value) * 100) + '%');
         };
         window.onload = mainStart;
