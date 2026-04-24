@@ -384,7 +384,7 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- CONFIGURACIÓN DE TU PROYECTO FIREBASE ---
+        // --- CONFIGURACIÓN FIREBASE ---
         let firebaseConfig = {
             apiKey: "AIzaSyBv2acfXnTnU-ZLBfhWOqwN3o_NYn9EIpo",
   authDomain: "album-archivos-alejandria.firebaseapp.com",
@@ -523,11 +523,11 @@
                     document.getElementById('global-historians-count').innerText = data.totalUsers || 0;
                     renderRecompensas(data.badgesGlobal || {});
                 } else {
-                    // Si el documento no existe, intentamos crearlo con valores iniciales
+                    // Si el documento no existe, lo creamos con el mapa badgesGlobal vacío explícitamente
                     setDoc(statsRef, { totalUsers: 0, badgesGlobal: {} }, { merge: true });
                 }
             }, (error) => { 
-                console.error("Error en snapshot global (posiblemente reglas de Firestore):", error); 
+                console.error("Error en snapshot global:", error); 
                 document.getElementById('global-historians-count').innerText = "Error";
             });
         }
@@ -660,7 +660,8 @@
             insigniasLegendarias.forEach(ins => {
                 const complete = ins.set.every(id => state.laminasOwned[id]);
                 const claimed = state.badgesClaimed.includes(ins.id);
-                const globalCount = badgesGlobal[ins.id] || 0;
+                // Aseguramos que badgesGlobal no sea null antes de buscar
+                const globalCount = (badgesGlobal && badgesGlobal[ins.id]) || 0;
                 const card = document.createElement('div');
                 card.className = `p-8 rounded-full text-center border-2 transition-all flex flex-col items-center justify-center aspect-square w-full max-w-[280px] mx-auto relative ${claimed ? 'border-amber-200/40 bg-[#fffef0]' : complete ? 'border-amber-400 bg-white animate-pulse' : 'border-dashed border-stone-300 opacity-40 grayscale'}`;
                 card.innerHTML = `<div class="mb-2 h-24 flex items-center justify-center">${ins.icon}</div><h4 class="font-bold text-stone-900 uppercase text-[14px] tracking-widest leading-tight mb-2">${ins.nombre}</h4><p class="text-stone-700 italic leading-relaxed px-4 font-serif text-[11px]">${ins.desc}</p><div class="mt-2 text-[9px] font-bold text-stone-500 uppercase opacity-70">${globalCount} Reclamadas Globalmente</div>`;
@@ -687,9 +688,14 @@
             if (isFirebaseActive) {
                 try { 
                     const globalStatsRef = doc(db, 'artifacts', appId, 'public', 'data', 'stats', 'global');
-                    await setDoc(globalStatsRef, { [`badgesGlobal.${id}`]: increment(1) }, { merge: true }); 
-                    console.log("Insignia reclamada globalmente con éxito.");
-                } catch (e) { console.error("Error crítico al reclamar insignia global (Revisa Reglas de Firestore):", e); }
+                    // Actualizamos usando la sintaxis de mapa de Firestore
+                    await setDoc(globalStatsRef, { 
+                        badgesGlobal: { [id]: increment(1) } 
+                    }, { merge: true }); 
+                    console.log("Insignia registrada en la nube.");
+                } catch (e) { 
+                    console.error("Error al registrar insignia global:", e); 
+                }
                 syncWithCloud();
             }
             renderRecompensas(lastGlobalData.badgesGlobal);
@@ -722,7 +728,6 @@
             window.showView('portada'); _updateUI();
             if (isFirebaseActive) {
                 try {
-                    // Intento de inicio de sesión anónimo
                     let userCredential;
                     if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                         userCredential = await signInWithCustomToken(auth, __initial_auth_token);
@@ -733,7 +738,6 @@
                     onAuthStateChanged(auth, async (u) => {
                         user = u;
                         if (user) {
-                            console.log("Sesión iniciada como:", user.uid);
                             const userProgressRef = doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'progress');
                             const snap = await getDoc(userProgressRef);
                             
@@ -742,7 +746,11 @@
                                 localStorage.setItem('alexandria_final', JSON.stringify(state)); 
                             } else { 
                                 const globalStatsRef = doc(db, 'artifacts', appId, 'public', 'data', 'stats', 'global');
-                                await setDoc(globalStatsRef, { totalUsers: increment(1) }, { merge: true }); 
+                                // Inicializamos con la estructura completa si es un usuario nuevo
+                                await setDoc(globalStatsRef, { 
+                                    totalUsers: increment(1),
+                                    badgesGlobal: lastGlobalData.badgesGlobal || {}
+                                }, { merge: true }); 
                             }
                             
                             setupGlobalListeners(); 
@@ -751,7 +759,7 @@
                         }
                     });
                 } catch (e) { 
-                    console.error("Fallo de autenticación Firebase. Asegúrate de habilitar 'Inicio de sesión anónimo' en tu consola de Firebase:", e);
+                    console.error("Error Auth:", e);
                     document.getElementById('sync-indicator').innerText = "Error Auth"; 
                 }
             } else { 
