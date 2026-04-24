@@ -51,6 +51,32 @@
             position: relative;
         }
 
+        /* EFECTO DE BRILLO ANIMADO */
+        @keyframes shine-anim {
+            0% { left: -100%; opacity: 0; }
+            20% { opacity: 0.5; }
+            40% { left: 100%; opacity: 0; }
+            100% { left: 100%; opacity: 0; }
+        }
+
+        .sticker-shine {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(
+                to right, 
+                transparent 0%, 
+                rgba(255, 255, 255, 0.4) 50%, 
+                transparent 100%
+            );
+            transform: skewX(-25deg);
+            animation: shine-anim 5s infinite;
+            pointer-events: none;
+            z-index: 10;
+        }
+
         .page-background-graphic {
             position: absolute;
             inset: 0;
@@ -334,8 +360,8 @@
                     <h2 class="text-4xl font-bold mb-8 text-center uppercase tracking-widest text-stone-900 text-center">Vitrina de Recompensas</h2>
                     <div id="badges-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-12 items-center justify-items-center"></div>
                     
-                    <div class="mt-12 text-stone-800/60 text-[10px] uppercase tracking-widest font-bold border-t border-stone-800/10 pt-8">
-                        <span id="global-historians-count">...</span> historiadores han visitado la biblioteca
+                    <div class="mt-12 text-stone-800/60 text-[12px] uppercase tracking-widest font-bold border-t border-stone-800/10 pt-8">
+                        <span id="global-historians-count">...</span> videonautas han visitado los archivos de alejandria
                     </div>
                 </div>
             </div>
@@ -595,9 +621,18 @@
             const card = document.createElement('div');
             const owned = state.laminasOwned[lamina.id];
             card.className = `sticker-slot cursor-pointer ${isPanorama ? 'aspect-[2/1] w-full shadow-lg' : 'aspect-[2/3] w-full shadow-md'} flex items-center justify-center relative overflow-hidden rounded-sm border border-black/10 bg-black/5`;
+            
             if (owned) {
+                // RESTAURACIÓN: ROTACIÓN ALEATORIA PARA EFECTO "PEGADO A MANO"
+                const randomRot = (Math.random() * 4 - 2).toFixed(2);
+                card.style.transform = `rotate(${randomRot}deg)`;
+                
                 card.classList.add('sticker-active');
-                card.innerHTML = `<img src="${lamina.img}" class="w-full h-full object-cover">`;
+                card.innerHTML = `
+                    <img src="${lamina.img}" class="w-full h-full object-cover">
+                    <!-- RESTAURACIÓN: EFECTO DE BRILLO -->
+                    <div class="sticker-shine"></div>
+                `;
                 if (!isPanorama) card.onclick = () => window.openViewer(lamina);
             } else {
                 card.innerHTML = `<span class="text-3xl font-bold text-stone-900/40 font-serif">${lamina.id}</span>`;
@@ -660,11 +695,16 @@
             insigniasLegendarias.forEach(ins => {
                 const complete = ins.set.every(id => state.laminasOwned[id]);
                 const claimed = state.badgesClaimed.includes(ins.id);
-                // Aseguramos que badgesGlobal no sea null antes de buscar
+                // MEJORA: CONTADOR DE INSIGNIAS UN 20% MÁS GRANDE (text-[11px])
                 const globalCount = (badgesGlobal && badgesGlobal[ins.id]) || 0;
                 const card = document.createElement('div');
                 card.className = `p-8 rounded-full text-center border-2 transition-all flex flex-col items-center justify-center aspect-square w-full max-w-[280px] mx-auto relative ${claimed ? 'border-amber-200/40 bg-[#fffef0]' : complete ? 'border-amber-400 bg-white animate-pulse' : 'border-dashed border-stone-300 opacity-40 grayscale'}`;
-                card.innerHTML = `<div class="mb-2 h-24 flex items-center justify-center">${ins.icon}</div><h4 class="font-bold text-stone-900 uppercase text-[14px] tracking-widest leading-tight mb-2">${ins.nombre}</h4><p class="text-stone-700 italic leading-relaxed px-4 font-serif text-[11px]">${ins.desc}</p><div class="mt-2 text-[9px] font-bold text-stone-500 uppercase opacity-70">${globalCount} Reclamadas Globalmente</div>`;
+                card.innerHTML = `
+                    <div class="mb-2 h-24 flex items-center justify-center">${ins.icon}</div>
+                    <h4 class="font-bold text-stone-900 uppercase text-[14px] tracking-widest leading-tight mb-2">${ins.nombre}</h4>
+                    <p class="text-stone-700 italic leading-relaxed px-4 font-serif text-[11px]">${ins.desc}</p>
+                    <div class="mt-2 text-[11px] font-bold text-stone-500 uppercase opacity-70">${globalCount} Reclamadas Globalmente</div>
+                `;
                 if (complete && !claimed) {
                     const btn = document.createElement('button');
                     btn.onclick = () => window.claimBadge(ins.id);
