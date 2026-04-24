@@ -384,19 +384,30 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // CONFIGURACIÓN DE SEGURIDAD PARA GITHUB
-        // Si las variables __ no existen, evitamos que el script explote.
-        let firebaseConfig = {};
+       
+        let firebaseConfig = {
+            apiKey: "AIzaSyBv2acfXnTnU-ZLBfhWOqwN3o_NYn9EIpo",
+  authDomain: "album-archivos-alejandria.firebaseapp.com",
+  projectId: "album-archivos-alejandria",
+  storageBucket: "album-archivos-alejandria.firebasestorage.app",
+  messagingSenderId: "885290528156",
+  appId: "1:885290528156:web:9afbd750956618afbeac59"
+        };
+
+        // Fallback automático para el entorno de Canvas (no borrar)
         try {
-            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        } catch(e) { console.warn("Configuración de Firebase no encontrada."); }
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                firebaseConfig = JSON.parse(__firebase_config);
+            }
+        } catch(e) {}
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'mi-album-alejandria';
         
         let app, auth, db;
         let isFirebaseActive = false;
 
-        if (firebaseConfig.apiKey) {
+        // Intentar inicializar Firebase
+        if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "AQUÍ_TU_API_KEY") {
             app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
@@ -425,8 +436,9 @@
         let state = JSON.parse(localStorage.getItem('alexandria_final')) || { laminasOwned: {}, badgesClaimed: [], currentPage: 1 };
         let _currentID = null;
         let user = null;
+        let lastGlobalData = { totalUsers: 0, badgesGlobal: {} }; 
 
-        // --- SISTEMA DE CELEBRACIÓN (CONFETI) ---
+        // --- SISTEMA DE CELEBRACIÓN ---
         const celebrationCanvas = document.getElementById('celebration-canvas');
         const ctx = celebrationCanvas.getContext('2d');
         let particles = [];
@@ -468,9 +480,7 @@
 
         function launchCelebration() {
             particles = [];
-            for (let i = 0; i < 150; i++) {
-                particles.push(new Particle());
-            }
+            for (let i = 0; i < 150; i++) { particles.push(new Particle()); }
             animateCelebration();
             setTimeout(() => {
                 cancelAnimationFrame(animationFrame);
@@ -512,10 +522,11 @@
             onSnapshot(statsRef, (snap) => {
                 if (snap.exists()) {
                     const data = snap.data();
+                    lastGlobalData = data;
                     document.getElementById('global-historians-count').innerText = data.totalUsers || 0;
                     renderRecompensas(data.badgesGlobal || {});
                 }
-            });
+            }, (error) => { console.error("Error en snapshot global:", error); });
         }
 
         // --- UI ---
@@ -545,7 +556,7 @@
             }
             if (viewId === 'album') renderAlbum();
             if (viewId === 'misiones') renderMisiones();
-            if (viewId === 'recompensa') renderRecompensas();
+            if (viewId === 'recompensa') renderRecompensas(lastGlobalData.badgesGlobal);
         };
 
         function renderAlbum() {
@@ -553,36 +564,25 @@
             const bgContainer = document.getElementById('page-bg-graphic');
             if (!body || !bgContainer) return;
             body.innerHTML = '';
-            
             const isOdd = state.currentPage % 2 !== 0;
             const currentData = state.currentPage === 1 ? _DATA_MAP.slice(0, 5) : _DATA_MAP.slice(5, 10);
             const pano = currentData.find(l => l.type === "panorama");
             const normals = currentData.filter(l => l.type !== "panorama");
-
             bgContainer.innerHTML = state.currentPage === 1 ? `<img src="azteca.png" alt="Símbolo Azteca" style="width:200px; opacity:0.1">` : `<svg viewBox="0 0 100 100" fill="none" stroke="#5d4037" stroke-width="2" style="width:200px; opacity:0.1"><path d="M10 90 L30 90 L30 70 L40 70 L40 50 L50 50 L50 30 L60 30 L60 50 L70 50 L70 70 L80 70 L80 90 L90 90" /><path d="M40 90 L40 80 L60 80 L60 90" /><circle cx="50" cy="20" r="5" /></svg>`;
-            
             const layout = document.createElement('div');
             layout.className = `flex h-full w-full gap-8 md:gap-14 ${isOdd ? 'flex-row' : 'flex-row-reverse'} items-end justify-between`;
-
             const mainCol = document.createElement('div');
             mainCol.className = "flex flex-col justify-between w-full h-full pb-2";
-
             const titleBox = document.createElement('div');
             titleBox.className = "pt-4 md:pt-8";
-            titleBox.innerHTML = `<h3 class="text-4xl md:text-6xl font-bold uppercase tracking-tighter leading-[0.85] ${isOdd ? 'text-left' : 'text-right'} text-stone-900 drop-shadow-sm">
-                ${state.currentPage === 1 ? 'EL IMPERIO<br>DEL SOL' : 'LEGADO<br>DEL JAGUAR'}
-            </h3>`;
-
+            titleBox.innerHTML = `<h3 class="text-4xl md:text-6xl font-bold uppercase tracking-tighter leading-[0.85] ${isOdd ? 'text-left' : 'text-right'} text-stone-900 drop-shadow-sm">${state.currentPage === 1 ? 'EL IMPERIO<br>DEL SOL' : 'LEGADO<br>DEL JAGUAR'}</h3>`;
             const panoContainer = document.createElement('div');
             panoContainer.className = "w-full";
             panoContainer.appendChild(createStickerElement(pano, true));
-
             mainCol.append(titleBox, panoContainer);
-
             const gridCol = document.createElement('div');
             gridCol.className = "grid grid-cols-2 gap-4 md:gap-6 shrink-0 w-[44%] md:w-[42%] mb-2";
             normals.forEach(l => gridCol.appendChild(createStickerElement(l)));
-
             layout.append(mainCol, gridCol);
             body.appendChild(layout);
             renderPagination();
@@ -591,9 +591,7 @@
         function createStickerElement(lamina, isPanorama = false) {
             const card = document.createElement('div');
             const owned = state.laminasOwned[lamina.id];
-            
             card.className = `sticker-slot cursor-pointer ${isPanorama ? 'aspect-[2/1] w-full shadow-lg' : 'aspect-[2/3] w-full shadow-md'} flex items-center justify-center relative overflow-hidden rounded-sm border border-black/10 bg-black/5`;
-            
             if (owned) {
                 card.classList.add('sticker-active');
                 card.innerHTML = `<img src="${lamina.img}" class="w-full h-full object-cover">`;
@@ -662,7 +660,16 @@
                 const globalCount = badgesGlobal[ins.id] || 0;
                 const card = document.createElement('div');
                 card.className = `p-8 rounded-full text-center border-2 transition-all flex flex-col items-center justify-center aspect-square w-full max-w-[280px] mx-auto relative ${claimed ? 'border-amber-200/40 bg-[#fffef0]' : complete ? 'border-amber-400 bg-white animate-pulse' : 'border-dashed border-stone-300 opacity-40 grayscale'}`;
-                card.innerHTML = `<div class="mb-2 h-24 flex items-center justify-center">${ins.icon}</div><h4 class="font-bold text-stone-900 uppercase text-[14px] tracking-widest leading-tight mb-2">${ins.nombre}</h4><p class="text-stone-700 italic leading-relaxed px-4 font-serif text-[11px]">${ins.desc}</p><div class="mt-2 text-[9px] font-bold text-stone-500 uppercase opacity-70">${globalCount} Reclamadas Globalmente</div>${complete && !claimed ? `<button onclick="window.claimBadge(${ins.id})" class="mt-4 bg-amber-600 text-white px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg hover:bg-amber-700">RECLAMAR</button>` : !complete ? `<p class="text-stone-500 text-[10px] mt-3 italic">Misión pendiente</p>` : ''}`;
+                card.innerHTML = `<div class="mb-2 h-24 flex items-center justify-center">${ins.icon}</div><h4 class="font-bold text-stone-900 uppercase text-[14px] tracking-widest leading-tight mb-2">${ins.nombre}</h4><p class="text-stone-700 italic leading-relaxed px-4 font-serif text-[11px]">${ins.desc}</p><div class="mt-2 text-[9px] font-bold text-stone-500 uppercase opacity-70">${globalCount} Reclamadas Globalmente</div>`;
+                if (complete && !claimed) {
+                    const btn = document.createElement('button');
+                    btn.onclick = () => window.claimBadge(ins.id);
+                    btn.className = "mt-4 bg-amber-600 text-white px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg hover:bg-amber-700 transition-all";
+                    btn.innerText = "RECLAMAR";
+                    card.appendChild(btn);
+                } else if (!complete) {
+                    const p = document.createElement('p'); p.className = "text-stone-500 text-[10px] mt-3 italic"; p.innerText = "Misión pendiente"; card.appendChild(p);
+                }
                 grid.appendChild(card);
             });
         }
@@ -671,27 +678,22 @@
             state.badgesClaimed.push(id); launchCelebration();
             localStorage.setItem('alexandria_final', JSON.stringify(state)); _updateUI();
             if (isFirebaseActive) {
-                try { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'stats', 'global'), { [`badgesGlobal.${id}`]: increment(1) }); } catch (e) {}
+                try { 
+                    const globalStatsRef = doc(db, 'artifacts', appId, 'public', 'data', 'stats', 'global');
+                    await setDoc(globalStatsRef, { [`badgesGlobal.${id}`]: increment(1) }, { merge: true }); 
+                } catch (e) { console.error("Error al reclamar insignia global:", e); }
                 syncWithCloud();
             }
-            renderRecompensas();
+            renderRecompensas(lastGlobalData.badgesGlobal);
         };
 
-        window.goToRewards = () => { 
-            const toast = document.getElementById('reward-notification');
-            if (toast) toast.classList.remove('show'); 
-            window.showView('recompensa'); 
-        };
-        window.hideNotification = () => {
-            const toast = document.getElementById('reward-notification');
-            if (toast) toast.classList.remove('show');
-        };
+        window.goToRewards = () => { const toast = document.getElementById('reward-notification'); if (toast) toast.classList.remove('show'); window.showView('recompensa'); };
+        window.hideNotification = () => { const toast = document.getElementById('reward-notification'); if (toast) toast.classList.remove('show'); };
 
         const processCode = () => {
             const l = _DATA_MAP.find(x => x.id === _currentID);
             if (btoa(document.getElementById('secret-code-input').value.trim().toUpperCase()) === l._key) {
-                state.laminasOwned[_currentID] = true; 
-                localStorage.setItem('alexandria_final', JSON.stringify(state)); _updateUI();
+                state.laminasOwned[_currentID] = true; localStorage.setItem('alexandria_final', JSON.stringify(state)); _updateUI();
                 document.getElementById('code-modal').classList.add('hidden'); renderAlbum();
                 if (Object.keys(state.laminasOwned).length % 5 === 0) {
                     launchCelebration(); document.getElementById('reward-notification').classList.add('show');
@@ -708,39 +710,27 @@
         document.getElementById('verify-code-btn').onclick = processCode;
         document.getElementById('secret-code-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') processCode(); });
 
-        // INICIALIZACIÓN PRINCIPAL
         const mainStart = async () => {
             window.showView('portada'); _updateUI();
-            
             if (isFirebaseActive) {
                 try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) { await signInWithCustomToken(auth, __initial_auth_token); }
+                    else { await signInAnonymously(auth); }
                     onAuthStateChanged(auth, async (u) => {
                         user = u;
                         if (user) {
-                            const snap = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'progress'));
-                            if (snap.exists()) {
-                                state = { ...state, ...snap.data() }; 
-                                localStorage.setItem('alexandria_final', JSON.stringify(state));
-                            } else {
-                                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'stats', 'global'), { totalUsers: increment(1) }, {merge: true});
-                            }
+                            const userProgressRef = doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'progress');
+                            const snap = await getDoc(userProgressRef);
+                            if (snap.exists()) { state = { ...state, ...snap.data() }; localStorage.setItem('alexandria_final', JSON.stringify(state)); }
+                            else { const globalStatsRef = doc(db, 'artifacts', appId, 'public', 'data', 'stats', 'global'); await setDoc(globalStatsRef, { totalUsers: increment(1) }, { merge: true }); }
                             setupGlobalListeners(); _updateUI();
                             document.getElementById('sync-indicator').innerText = "Sincronizado";
                         }
                     });
                 } catch (e) { document.getElementById('sync-indicator').innerText = "Modo Local"; }
-            } else {
-                document.getElementById('sync-indicator').innerText = "Modo Local";
-            }
-            
+            } else { document.getElementById('sync-indicator').innerText = "Modo Local"; }
             document.getElementById('zoom-slider').addEventListener('input', (e) => document.getElementById('viewer-image').style.width = (parseFloat(e.target.value) * 100) + '%');
         };
-
         window.onload = mainStart;
     </script>
 </body>
