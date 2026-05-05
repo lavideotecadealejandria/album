@@ -860,7 +860,7 @@ c-31 -59 -57 -112 -58 -118 0 -5 14 -23 31 -40 17 -16 44 -45 60 -66 l29 -36
             const pano = currentData.find(l => l.type === "panorama");
             const normals = currentData.filter(l => l.type !== "panorama");
             
-            const bgImage = state.currentPage === 1 ? 'fondonovazteca.png' : 'fondonovjaguar.png';
+            const bgImage = state.currentPage === 1 ? 'fondop01.png' : 'fondop02.png';
             bgContainer.innerHTML = `<img src="${bgImage}" alt="Marca de Agua" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.32; mix-blend-mode: multiply;">`;
 
             const layout = document.createElement('div');
